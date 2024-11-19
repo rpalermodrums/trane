@@ -8,6 +8,7 @@ media_volume
 celery-beat-logs
 .DS_Store
 **/__pycache__
+**/__pycache__/*
 backend/transcribe_cli.egg-info/*
 **/*.pyc
 **/*.pyo
