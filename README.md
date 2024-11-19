@@ -45,14 +45,14 @@ Transcribe is a full-stack application that provides audio source separation cap
 
 #### Quick Start
 
-1. Clone the repository:
+1 . Clone the repository:
 
 ```bash
 git clone https://github.com/yourusername/transcribe.git
 cd transcribe
 ```
 
-2. Create a `.env` file in the root directory:
+2 . Create a `.env` file in the root directory:
 
 ```bash
 DEBUG=1
@@ -64,19 +64,19 @@ REDIS_HOST=redis
 REDIS_PORT=6379
 ```
 
-3. Build and start the containers:
+3 . Build and start the containers:
 
 ```bash
 docker compose up -d --build
 ```
 
-4. Create a superuser for Django admin:
+4 . Create a superuser for Django admin:
 
 ```bash
 docker compose exec backend python manage.py createsuperuser
 ```
 
-5. Access the application:
+5 . Access the application:
 
 - Frontend: <http://localhost>
 - Backend API: <http://localhost/api/>
@@ -86,21 +86,21 @@ docker compose exec backend python manage.py createsuperuser
 
 #### Backend
 
-6. Create a virtual environment:
+1 . Create a virtual environment:
 
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-7. Install dependencies:
+2 . Install dependencies:
 
 ```bash
 cd backend
 pip install -r requirements.txt
 ```
 
-8. Run migrations:
+3 . Run migrations:
 
 ```bash
 python manage.py migrate
@@ -108,14 +108,14 @@ python manage.py migrate
 
 #### Frontend
 
-1. Install dependencies:
+1 . Install dependencies:
 
 ```bash
 cd frontend
 npm install
 ```
 
-2. Start development server:
+2 . Start development server:
 
 ```bash
 npm run dev
