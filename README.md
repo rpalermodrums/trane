@@ -52,7 +52,7 @@ git clone https://github.com/yourusername/transcribe.git
 cd transcribe
 ```
 
-1. Create a .env file in the root directory:
+2. Create a `.env` file in the root directory:
 
 ```bash
 DEBUG=1
@@ -64,19 +64,19 @@ REDIS_HOST=redis
 REDIS_PORT=6379
 ```
 
-1. Build and start the containers:
+3. Build and start the containers:
 
 ```bash
 docker compose up -d --build
 ```
 
-1. Create a superuser for Django admin:
+4. Create a superuser for Django admin:
 
 ```bash
 docker compose exec backend python manage.py createsuperuser
 ```
 
-1. Access the application:
+5. Access the application:
 
 - Frontend: <http://localhost>
 - Backend API: <http://localhost/api/>
@@ -86,21 +86,21 @@ docker compose exec backend python manage.py createsuperuser
 
 #### Backend
 
-1. Create a virtual environment:
+6. Create a virtual environment:
 
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-1. Install dependencies:
+7. Install dependencies:
 
 ```bash
 cd backend
 pip install -r requirements.txt
 ```
 
-1. Run migrations:
+8. Run migrations:
 
 ```bash
 python manage.py migrate
@@ -115,7 +115,7 @@ cd frontend
 npm install
 ```
 
-1. Start development server:
+2. Start development server:
 
 ```bash
 npm run dev
