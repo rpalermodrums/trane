@@ -1,0 +1,95 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    command: python manage.py runserver 0.0.0.0:8000
+    env_file:
+      - ./.env
+    volumes:
+      - ./backend:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/mediafiles
+    depends_on:
+      - database
+      - redis
+    expose:
+      - '8000'
+    ports:
+      - '8000:8000'
+    networks:
+      - webnet
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - '80:80'
+    networks:
+      - webnet
+    volumes:
+      - node_modules_volume:/app/node_modules
+      - ./frontend/nginx:/etc/nginx/conf.d
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  celery:
+    build:
+      context: ./backend
+    command: celery -A transcribe worker -l info
+    env_file:
+      - ./.env
+    volumes:
+      - ./backend:/app
+      - media_volume:/app/mediafiles
+    depends_on:
+      - backend
+      - redis
+    networks:
+      - webnet
+
+  celery-beat:
+    build: ./backend
+    command: celery -A transcribe beat -l info
+    volumes:
+      - ./backend:/app
+      - celery_beat_logs:/var/log/celery
+    env_file:
+      - ./.env
+    depends_on:
+      - backend
+      - redis
+    networks:
+      - webnet
+
+  database:
+    image: postgres:16
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=database
+    networks:
+      - webnet
+
+  redis:
+    image: redis:6
+    networks:
+      - webnet
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+  celery_beat_logs:
+  node_modules_volume:
+
+networks:
+  webnet:
