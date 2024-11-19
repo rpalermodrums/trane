@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 
 interface WaveformVisualizerProps {
+  height?: number;
+  color?: string
   audioUrl: string;
   currentTime: number;
   duration: number;
@@ -9,6 +11,8 @@ interface WaveformVisualizerProps {
 }
 
 export const WaveformVisualizer = ({
+  height = 60,
+  color = '#6366f1',
   audioUrl,
   currentTime,
   duration,
@@ -23,12 +27,12 @@ export const WaveformVisualizer = ({
 
     wavesurferRef.current = WaveSurfer.create({
       container: containerRef.current,
-      waveColor: 'rgb(var(--foreground))',
-      progressColor: 'rgb(var(--primary))',
-      cursorColor: 'rgb(var(--primary))',
+      waveColor: color,
+      progressColor: color,
+      cursorColor: color,
       barWidth: 2,
       barGap: 1,
-      height: 60,
+      height: height,
       normalize: true,
     });
 
@@ -50,7 +54,7 @@ export const WaveformVisualizer = ({
   }, [audioUrl]);
 
   useEffect(() => {
-    if (isReady && wavesurferRef.current) {
+    if (isReady && wavesurferRef.current && duration > 0) {
       wavesurferRef.current.seekTo(currentTime / duration);
     }
   }, [currentTime, duration, isReady]);

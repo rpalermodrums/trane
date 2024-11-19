@@ -32,45 +32,38 @@ export const AudioPlayer = ({ tracks }: AudioPlayerProps) => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const updateTime = () => setCurrentTime(audio.currentTime);
-    const updateDuration = () => setDuration(audio.duration);
-    
-    audio.addEventListener('timeupdate', updateTime);
-    audio.addEventListener('loadedmetadata', updateDuration);
-    audio.addEventListener('ended', handleTrackEnd);
-
-    return () => {
-      audio.removeEventListener('timeupdate', updateTime);
-      audio.removeEventListener('loadedmetadata', updateDuration);
-      audio.removeEventListener('ended', handleTrackEnd);
+    // audio.onplay = () => {
+    //   console.log('onplay');
+    //   audio.currentTime = currentTime;
+    //   setIsPlaying(true);
+    // };
+    // audio.onseeking = (e: Event) => {
+    //   console.log('onseeking');
+    //   audio.currentTime = (e.target as HTMLAudioElement).currentTime;
+    //   setCurrentTime((e.target as HTMLAudioElement).currentTime);
+    // // };
+    // audio.onpause = () => {
+    //   console.log('onpause');
+    //   setIsPlaying(false);
+    // };
+    // audio.onplaying = () => {
+    //   console.log('onplaying');
+    //   setCurrentTime(audio.currentTime);
+    // };
+    audio.onloadedmetadata = () => {
+      console.log('onloadedmetadata');
+      setDuration(audio.duration);
+    };
+    audio.onended = () => {
+      console.log('onended');
+      if (currentTrackIndex < tracks.length - 1) {
+        setCurrentTrackIndex(currentTrackIndex + 1);
+      } else {
+        setIsPlaying(false);
+      }
     };
   }, [currentTrackIndex]);
 
-  const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  const handleTrackEnd = () => {
-    if (currentTrackIndex < tracks.length - 1) {
-      setCurrentTrackIndex(currentTrackIndex + 1);
-    } else {
-      setIsPlaying(false);
-    }
-  };
-
-  const handleTimeChange = (value: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = value;
-      setCurrentTime(value);
-    }
-  };
 
   const handleVolumeChange = (value: number) => {
     if (audioRef.current) {
@@ -94,13 +87,32 @@ export const AudioPlayer = ({ tracks }: AudioPlayerProps) => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  const skipTrack = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      setCurrentTrackIndex(Math.max(0, currentTrackIndex - 1));
+    } else {
+      setCurrentTrackIndex(Math.min(tracks.length - 1, currentTrackIndex + 1));
+    }
+  };
+
   return (
     <div className="p-4 bg-white rounded-lg shadow">
       <audio
         ref={audioRef}
         src={tracks[currentTrackIndex]?.url}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
+        onPlay={() => {
+          console.log('onPlay', audioRef.current?.currentTime, currentTime);
+          if (audioRef.current) {
+            console.log('setting currentTime', currentTime);
+            audioRef.current.currentTime = currentTime;
+          }
+          console.log('after onPlay', audioRef.current?.currentTime, currentTime);
+          setIsPlaying(true);
+        }}
+        onPause={() => {
+          console.log('onPause', audioRef.current?.currentTime, currentTime);
+          setIsPlaying(false);
+        }}
       />
 
       <div className="flex items-center justify-between mb-4">
@@ -118,7 +130,12 @@ export const AudioPlayer = ({ tracks }: AudioPlayerProps) => {
         value={[currentTime]}
         max={duration}
         step={1}
-        onValueChange={(value: number[]) => handleTimeChange(value[0])}
+        onValueChange={(value: number[]) => {
+          console.log('onValueChange', value);
+          if (audioRef.current) {
+            setCurrentTime(value[0]);
+          }
+        }}
         className="mb-4"
       />
 
@@ -127,29 +144,31 @@ export const AudioPlayer = ({ tracks }: AudioPlayerProps) => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setCurrentTrackIndex(Math.max(0, currentTrackIndex - 1))}
+            onClick={() => skipTrack('prev')}
           >
-            <SkipBack className="h-4 w-4" />
+            <SkipBack className="w-4 h-4" />
           </Button>
 
           <Button
             variant="outline"
             size="icon"
-            onClick={togglePlay}
+            onClick={() =>
+              isPlaying ? audioRef.current?.pause() : audioRef.current?.play()
+            }
           >
             {isPlaying ? (
-              <Pause className="h-4 w-4" />
+              <Pause className="w-4 h-4" />
             ) : (
-              <Play className="h-4 w-4" />
+              <Play className="w-4 h-4" />
             )}
           </Button>
 
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setCurrentTrackIndex(Math.min(tracks.length - 1, currentTrackIndex + 1))}
+            onClick={() => skipTrack('next')}
           >
-            <SkipForward className="h-4 w-4" />
+            <SkipForward className="w-4 h-4" />
           </Button>
         </div>
 
@@ -160,9 +179,9 @@ export const AudioPlayer = ({ tracks }: AudioPlayerProps) => {
             onClick={toggleMute}
           >
             {isMuted ? (
-              <VolumeX className="h-4 w-4" />
+              <VolumeX className="w-4 h-4" />
             ) : (
-              <Volume2 className="h-4 w-4" />
+              <Volume2 className="w-4 h-4" />
             )}
           </Button>
           <Slider

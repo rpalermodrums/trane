@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { fetchAPI } from '../api';
+import { Button } from './ui/button';
+import { Play } from 'lucide-react';
 
 interface Entry {
   id: number;
@@ -33,19 +36,29 @@ export const ProcessingHistory = () => {
                   Model: {entry.model_version}
                 </p>
               </div>
-              <div className="text-right">
-                <span className={`inline-block px-2 py-1 rounded text-sm ${
-                  entry.processing_status === 'completed'
-                    ? 'bg-green-100 text-green-800'
-                    : entry.processing_status === 'failed'
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {entry.processing_status}
-                </span>
-                <p className="text-xs text-gray-500 mt-1">
-                  {new Date(entry.created_at).toLocaleString()}
-                </p>
+              <div className="flex items-center gap-4">
+                {entry.processing_status === 'completed' && (
+                  <Link to="/playback/$entryId" params={{ entryId: entry.id.toString() }}>
+                    <Button variant="outline" size="sm">
+                      <Play className="h-4 w-4 mr-2" />
+                      Play
+                    </Button>
+                  </Link>
+                )}
+                <div className="text-right">
+                  <span className={`inline-block px-2 py-1 rounded text-sm ${
+                    entry.processing_status === 'completed'
+                      ? 'bg-green-100 text-green-800'
+                      : entry.processing_status === 'failed'
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {entry.processing_status}
+                  </span>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {new Date(entry.created_at).toLocaleString()}
+                  </p>
+                </div>
               </div>
             </div>
           </div>

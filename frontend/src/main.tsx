@@ -13,8 +13,9 @@ import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Login from './components/Login';
 import Home from './pages/Home';
-import { Settings } from './pages/Settings';
 import './index.css';
+import { PlaybackView } from './pages/PlaybackView'
+import { Settings } from 'lucide-react'
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -66,6 +67,12 @@ const protectedRoute = createRoute({
   component: ProtectedRoute,
 });
 
+const playbackRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/playback/$entryId',
+  component: PlaybackView,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/settings',
@@ -78,6 +85,7 @@ const routeTree = rootRoute.addChildren([
   protectedRoute.addChildren([
     indexRoute,
     settingsRoute,
+    playbackRoute,
   ]),
 ])
 

@@ -1,10 +1,11 @@
-from django.http import HttpResponse, FileResponse
+from django.http import HttpResponse, StreamingHttpResponse
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from wsgiref.util import FileWrapper
 import os
+import mimetypes
 
 from core.tasks import process_audio
 from transcribe.tasks import example_task
@@ -68,7 +69,7 @@ class EntryViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def download(self, request, pk=None):
-        """Download the processed audio file"""
+        """Download the processed audio file with proper headers for streaming"""
         entry = self.get_object()
         
         # Check if the file exists
@@ -77,13 +78,32 @@ class EntryViewSet(viewsets.ModelViewSet):
                 {'error': 'File not found'}, 
                 status=status.HTTP_404_NOT_FOUND
             )
-            
-        # Create response with file
-        response = FileResponse(
+
+        # Get file info
+        file_size = os.path.getsize(entry.audio_file.path)
+        content_type = mimetypes.guess_type(entry.audio_file.path)[0]
+
+        # Handle range header for streaming
+        range_header = request.META.get('HTTP_RANGE', '').strip()
+        range_match = range_header.replace('bytes=', '').split('-')
+        range_start = int(range_match[0]) if range_match[0] else 0
+        range_end = min(int(range_match[1]), file_size - 1) if range_match[1] else file_size - 1
+        length = range_end - range_start + 1
+
+        # Create response
+        response = StreamingHttpResponse(
             FileWrapper(open(entry.audio_file.path, 'rb')),
-            content_type='audio/wav'
+            status=206 if range_header else 200,
+            content_type=content_type
         )
+
+        # Add streaming headers
+        response['Accept-Ranges'] = 'bytes'
+        if range_header:
+            response['Content-Range'] = f'bytes {range_start}-{range_end}/{file_size}'
+        response['Content-Length'] = str(length)
         response['Content-Disposition'] = f'attachment; filename="{entry.original_filename}"'
+        
         return response
 
     @action(detail=True, methods=['patch'])
@@ -105,6 +125,26 @@ class EntryViewSet(viewsets.ModelViewSet):
             'id': entry.id,
             'original_filename': entry.original_filename
         })
+
+    def retrieve(self, request, *args, **kwargs):
+        entry = self.get_object()
+        serializer = self.get_serializer(entry)
+        data = serializer.data
+
+        # Add paths for separated tracks if processing is completed
+        if entry.processing_status == 'completed':
+            output_dir = f"entry_{entry.id}_stems/{entry.model_version}/{entry.audio_file.url.split('/')[-1].split('.')[0]}"
+            data['output_dir'] = output_dir
+            data['duration'] = entry.duration
+            data['tracks'] = {
+                'original': entry.audio_file.url,
+                'vocals': f"/media/audio_files/{output_dir}/vocals.wav",
+                'drums': f"/media/audio_files/{output_dir}/drums.wav",
+                'bass': f"/media/audio_files/{output_dir}/bass.wav",
+                'other': f"/media/audio_files/{output_dir}/other.wav",
+            }
+
+        return Response(data)
 
 class NoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all()
