@@ -4,16 +4,18 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "dev": "pnpm vite",
+    "build": "pnpm tsc -b && pnpm vite build",
+    "lint": "pnpm eslint .",
+    "preview": "pnpm vite preview"
   },
   "dependencies": {
+    "@radix-ui/react-progress": "^1.1.0",
+    "@radix-ui/react-slider": "^1.2.1",
     "@radix-ui/react-slot": "^1.1.0",
     "@shadcn/ui": "latest",
     "@tanstack/react-query": "^5.60.5",
-    "@tanstack/router": "^0.0.1-beta.53",
+    "@tanstack/react-router": "^1.82.1",
     "autoprefixer": "^10.4.13",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -35,5 +37,6 @@
     "@vitejs/plugin-react": "^4.3.3",
     "typescript": "^5.0.4",
     "vite": "^5.4.11"
-  }
+  },
+  "packageManager": "pnpm@9.11.0"
 }

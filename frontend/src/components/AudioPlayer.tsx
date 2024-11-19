@@ -1,6 +1,6 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { Slider } from './ui/slider';
-import { Button } from './ui/button';
+import { useRef, useState, useEffect } from 'react';
+import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/ui/button';
 import {
   Play,
   Pause,
@@ -118,7 +118,7 @@ export const AudioPlayer = ({ tracks }: AudioPlayerProps) => {
         value={[currentTime]}
         max={duration}
         step={1}
-        onValueChange={(value) => handleTimeChange(value[0])}
+        onValueChange={(value: number[]) => handleTimeChange(value[0])}
         className="mb-4"
       />
 
@@ -169,7 +169,7 @@ export const AudioPlayer = ({ tracks }: AudioPlayerProps) => {
             value={[isMuted ? 0 : volume]}
             max={1}
             step={0.1}
-            onValueChange={(value) => handleVolumeChange(value[0])}
+            onValueChange={(value: number[]) => handleVolumeChange(value[0])}
             className="w-24"
           />
         </div>
