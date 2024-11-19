@@ -1,21 +1,25 @@
-# Transcribe - Audio Source Separation Tool
+# Trane
 
-## Overview
+> Test Kitchen for Experiments at the Intersection of Music, AI, Sound, and Technology
+
+## Modules
+
+### Transcribe - Audio Source Separation Tool
+
+#### Overview
 
 Transcribe is a full-stack application that provides audio source separation capabilities using the Demucs model. It offers both a web interface and a CLI tool for processing audio files.
 
-## Features
+#### Features
 
 - Audio source separation using multiple Demucs models
-- Real-time progress tracking
-- Advanced audio player with track management
 - CLI interface for batch processing
-- User authentication and task management
-- WebSocket-based progress updates
+- Real-time progress tracking
+- Audio player with track management
 
-## Architecture
+### Stack
 
-### Backend (Django + Celery)
+#### Backend (Django + Celery)
 
 - Django REST framework for API endpoints
 - Celery for asynchronous task processing
@@ -23,7 +27,7 @@ Transcribe is a full-stack application that provides audio source separation cap
 - PostgreSQL for data storage
 - Redis for task queue and WebSocket backend
 
-### Frontend (React + TypeScript)
+#### Frontend (React + TypeScript)
 
 - React with TypeScript for type safety
 - TanStack Query for data fetching
@@ -31,22 +35,18 @@ Transcribe is a full-stack application that provides audio source separation cap
 - Tailwind CSS for styling
 - Shadcn UI components
 
-## Installation
+### Installation
 
-### Prerequisites
+#### Prerequisites
 
 - Docker and Docker Compose
-- Node.js 18+ (for local development)
-- Python 3.12+ (for local development)
+- Node.js 20+ (for local development)
+- Python 3.10+ (for local development)
 
-### Quick Start
+#### Quick Start
 
 1. Clone the repository:
-I'll help you complete the README.md. Here's the continuation from where it left off:
 
-```markdown
-### Quick Start
-1. Clone the repository:
 ```bash
 git clone https://github.com/yourusername/transcribe.git
 cd transcribe
@@ -121,32 +121,6 @@ npm install
 npm run dev
 ```
 
-### Project Structure
-
-```bash
-transcribe/
-├── backend/
-│   ├── core/           # Main Django app
-│   ├── transcribe/     # Django project settings
-│   └── requirements.txt
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   └── lib/
-│   └── package.json
-└── docker-compose.yml
-```
-
-### API Documentation
-
-The API documentation is available at `/api/` when running the development server. Key endpoints include:
-
-- `/api/entries/` - Audio file entries management
-- `/api/auth/token/` - JWT token authentication
-- `/api/documents/` - Document management
-- `/api/notes/` - Notes management
-
 ### Contributing
 
 1. Fork the repository
@@ -157,10 +131,11 @@ The API documentation is available at `/api/` when running the development serve
 
 ### License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the GNU General Public License (GPL) Ver3 - see the [LICENSE](LICENSE) file for details.
 
 ### Acknowledgments
 
 - [Demucs](https://github.com/facebookresearch/demucs) for audio source separation
-- [Django REST framework](https://www.django-rest-framework.org/) for API development
+- [PyTorch](https://pytorch.org/) for deep learning
+- [Django](https://www.djangoproject.com/) and [Django REST framework](https://www.django-rest-framework.org/) for backend development
 - [React](https://reactjs.org/) and [TypeScript](https://www.typescriptlang.org/) for frontend development
