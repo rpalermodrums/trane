@@ -10,6 +10,11 @@ import {
   createRootRoute,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/router-devtools'
+import { ProtectedRoute } from './components/ProtectedRoute';
+import Login from './components/Login';
+import Home from './pages/Home';
+import { Settings } from './pages/Settings';
+import './index.css';
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -20,6 +25,12 @@ const rootRoute = createRootRoute({
         </Link>{' '}
         <Link to="/about" className="[&.active]:font-bold">
           About
+        </Link>
+        <Link to="/login" className="[&.active]:font-bold">
+          Login
+        </Link>
+        <Link to="/settings" className="[&.active]:font-bold">
+          Settings
         </Link>
       </div>
       <hr />
@@ -32,14 +43,8 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: function Index() {
-    return (
-      <div className="p-2">
-        <h3>Welcome Home!</h3>
-      </div>
-    )
-  },
-})
+  component: Home,
+});
 
 const aboutRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -49,7 +54,32 @@ const aboutRoute = createRoute({
   },
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, aboutRoute])
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/login',
+  component: Login,
+});
+
+const protectedRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: 'protected', // Give it an ID instead of a path
+  component: ProtectedRoute,
+});
+
+const settingsRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/settings',
+  component: Settings,
+});
+
+const routeTree = rootRoute.addChildren([
+  aboutRoute,
+  loginRoute,
+  protectedRoute.addChildren([
+    indexRoute,
+    settingsRoute,
+  ]),
+])
 
 const router = createRouter({ routeTree })
 
@@ -61,7 +91,7 @@ declare module '@tanstack/react-router' {
 
 const queryClient = new QueryClient();
 
-const rootElement = document.getElementById('app')!
+const rootElement = document.getElementById('root')!
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement)
   root.render(

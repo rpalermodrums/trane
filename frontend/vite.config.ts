@@ -11,6 +11,28 @@ export default defineConfig({
     },
   },
   server: {
+    host: true,
     port: 3000,
+    watch: {
+      usePolling: true,
+    },
+    proxy: {
+      '/api': {
+        target: 'http://backend:8000',
+        changeOrigin: true,
+      },
+      '/admin': {
+        target: 'http://backend:8000',
+        changeOrigin: true,
+      },
+      '/static': {
+        target: 'http://backend:8000',
+        changeOrigin: true,
+      },
+      '/media': {
+        target: 'http://backend:8000',
+        changeOrigin: true,
+      },
+    },
   },
 })

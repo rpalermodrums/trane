@@ -1,10 +1,11 @@
 from celery import shared_task
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-from .models import Entry
 import os
 import subprocess
 import re
+
+from core.models import Entry
 
 @shared_task(bind=True)
 def process_audio(self, entry_id):
@@ -31,7 +32,7 @@ def process_audio(self, entry_id):
         command = ['demucs', '-o', output_dir, '--verbose']
         
         if entry.model_version:
-            command.extend(['--model', entry.model_version])
+            command.extend(['-n', entry.model_version])
             
         if entry.processing_options.get('instruments'):
             command.extend(['--two-stems'] + list(entry.processing_options['instruments']))
@@ -48,24 +49,27 @@ def process_audio(self, entry_id):
         )
 
         # Monitor progress
+        stderr_output = []
         for line in process.stderr:
+            stderr_output.append(line)
             if 'Progress:' in line:
                 progress = re.search(r'(\d+)%', line)
                 if progress:
                     update_progress(int(progress.group(1)))
 
         process.wait()
+
+        if process.returncode != 0:
+            error_msg = '\n'.join(stderr_output)
+            raise Exception(f"Process failed with return code {process.returncode}. Error: {error_msg}")
         
-        if process.returncode == 0:
-            entry.processing_status = 'completed'
-            entry.save()
-            update_progress(100, 'completed')
-            return {
-                'status': 'success',
-                'output_dir': output_dir
-            }
-        else:
-            raise Exception(f"Process failed with return code {process.returncode}")
+        entry.processing_status = 'completed'
+        entry.save()
+        update_progress(100, 'completed')
+        return {
+            'status': 'success',
+            'output_dir': output_dir
+        }
             
     except Exception as e:
         entry.processing_status = 'failed'

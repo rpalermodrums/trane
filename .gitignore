@@ -7,17 +7,12 @@ static_volume
 media_volume
 celery-beat-logs
 .DS_Store
-backend/**/__pycache__/
-backend/**/*.pyc
-backend/core/__pycache__/*.pyc
-backend/transcribe/__pycache__/*.pyc
-backend/transcribe_cli.egg-info/*
 **/__pycache__/
-**/__pycache__/*
 **/*.pyc
 **/*.pyo
 **/*.pyd
 **/*.pyz
+backend/transcribe_cli.egg-info/*
 
 **/*.log
 **/*.log.*

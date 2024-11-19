@@ -1,9 +1,9 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
 /* Shadcn UI styles */
-@import '@shadcn/ui/styles.css';
+/* @import '@shadcn/ui/styles.css'; */
 
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;

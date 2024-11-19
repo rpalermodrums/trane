@@ -12,7 +12,7 @@ interface Entry {
 export const ProcessingHistory = () => {
   const { data: entries, isLoading } = useQuery({
     queryKey: ['entries'],
-    queryFn: () => fetchAPI('/api/entries/'),
+    queryFn: () => fetchAPI('/entries/'),
   });
 
   if (isLoading) return <div>Loading...</div>;

@@ -1,6 +1,10 @@
 from rest_framework import serializers
-from .models import Entry, Note, Document, Tag
 from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+
+from core.models import Entry, Note, Document, Tag
+
+User = get_user_model()
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,3 +30,12 @@ class EntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = Entry
         fields = '__all__'
+        read_only_fields = ('user', 'created_by', 'updated_by')
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'first_name', 'last_name')
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }

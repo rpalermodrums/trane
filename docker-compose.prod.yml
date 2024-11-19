@@ -1,0 +1,14 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+    ports:
+      - '80:80'
+    networks:
+      - webnet
+    volumes:
+      - ./frontend/nginx:/etc/nginx/conf.d
+    depends_on:
+      backend:
+        condition: service_healthy 

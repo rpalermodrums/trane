@@ -28,16 +28,20 @@ services:
   frontend:
     build:
       context: ./frontend
+      target: development
     ports:
       - '80:80'
     networks:
       - webnet
     volumes:
+      - ./frontend:/app
       - node_modules_volume:/app/node_modules
-      - ./frontend/nginx:/etc/nginx/conf.d
     depends_on:
       backend:
         condition: service_healthy
+    environment:
+      - NODE_ENV=development
+    command: pnpm dev
 
   celery:
     build:
