@@ -2,6 +2,13 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class Entry(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+    
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     audio_file = models.FileField(upload_to='audio_files/')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -10,7 +17,14 @@ class Entry(models.Model):
     updated_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='updated_entries')
     notes = models.ManyToManyField('Note', related_name='entries')
     documents = models.ManyToManyField('Document', related_name='entries')
-    processing_status = models.CharField(max_length=20, default='pending')
+    processing_status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending'
+    )
+    model_version = models.CharField(max_length=50, default='htdemucs')
+    processing_options = models.JSONField(default=dict)
+    error_message = models.TextField(null=True, blank=True)
 
 
 class Note(models.Model):

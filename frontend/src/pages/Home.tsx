@@ -1,20 +1,18 @@
-import { useQuery } from '@tanstack/react-query';
-import { fetchAPI } from '../api';
+import { AudioProcessor } from '../components/AudioProcessor';
+import { ProcessingHistory } from '../components/ProcessingHistory';
 
 const Home = () => {
-  const { data, isLoading, error } = useQuery({ queryKey: ['entries'], queryFn: () => fetchAPI('/entries/') });
-
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error loading entries</div>;
-
   return (
-    <div>
-      {data.map((entry: any) => (
-        <div key={entry.id}>
-          <h2>{entry.title}</h2>
-          {/* Display entry details */}
+    <div className="container mx-auto py-8">
+      <h1 className="text-3xl font-bold mb-8">Audio Source Separation</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+          <AudioProcessor />
         </div>
-      ))}
+        <div>
+          <ProcessingHistory />
+        </div>
+      </div>
     </div>
   );
 };
