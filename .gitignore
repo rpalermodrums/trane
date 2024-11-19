@@ -20,4 +20,5 @@ backend/transcribe_cli.egg-info/*
 **/*.err
 **/*.err.*
 
+node_modules/
 out/
