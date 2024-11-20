@@ -51,7 +51,7 @@ export const WaveformVisualizer = ({
         wavesurferRef.current.destroy();
       }
     };
-  }, [audioUrl]);
+  }, [audioUrl, height, color, duration, onTimeChange]);
 
   useEffect(() => {
     if (isReady && wavesurferRef.current && duration > 0) {

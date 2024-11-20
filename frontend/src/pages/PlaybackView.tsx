@@ -55,8 +55,8 @@ export const PlaybackView = () => {
   ].filter(track => track.url);
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">Playback - Entry #{entryId}</h1>
+    <div className="container py-8 mx-auto">
+      <h1 className="mb-6 text-2xl font-bold">Playback - Entry #{entryId}</h1>
       
       <div className="space-y-8">
         {tracks.map((track) => (
@@ -72,10 +72,10 @@ export const PlaybackView = () => {
                 track.name === 'Other' ? '#7c3aed' :
                 '#6366f1'
               }
-              currentTime={isFinite(currentTime) ? currentTime : 0}
+              currentTime={Number.isFinite(currentTime) ? currentTime : 0}
               duration={entry.duration ?? 0}
               onTimeChange={(time) => {
-                if (Array.isArray(time) && time.length > 0 && isFinite(time[0])) {
+                if (Array.isArray(time) && time.length > 0 && Number.isFinite(time[0])) {
                   setCurrentTime(time[0]);
                 }
               }}

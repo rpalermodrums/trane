@@ -34,8 +34,14 @@ export const AudioPlayer = ({ tracks }: AudioPlayerProps) => {
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isLooping, setIsLooping] = useState(false);
   const [trackVolumes, setTrackVolumes] = useState<{ [key: string]: number }>(
-    tracks.reduce((acc, track) => ({ ...acc, [track.name]: 1 }), {})
-  );
+			tracks.reduce(
+				(acc, track) => {
+					acc[track.name] = 1;
+					return acc;
+				},
+				{} as { [key: string]: number },
+			),
+		);
   const [soloedTrack, setSoloedTrack] = useState<string | null>(null);
   const [mutedTracks, setMutedTracks] = useState<Set<string>>(new Set());
 
@@ -55,7 +61,7 @@ export const AudioPlayer = ({ tracks }: AudioPlayerProps) => {
       audio.removeEventListener('loadedmetadata', updateDuration);
       audio.removeEventListener('ended', handleTrackEnd);
     };
-  }, [currentTrackIndex]);
+  }, []);
 
   const togglePlay = () => {
     if (audioRef.current) {
@@ -144,13 +150,16 @@ export const AudioPlayer = ({ tracks }: AudioPlayerProps) => {
   };
 
   return (
-    <div className="p-4 bg-card rounded-lg shadow space-y-4">
+    <div className="p-4 space-y-4 rounded-lg shadow bg-card">
       <audio
         ref={audioRef}
         src={tracks[currentTrackIndex]?.url}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
-      />
+        crossOrigin="anonymous"
+      >
+        <track kind="captions" src="" />
+      </audio>
 
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">
@@ -177,7 +186,7 @@ export const AudioPlayer = ({ tracks }: AudioPlayerProps) => {
             size="icon"
             onClick={() => setCurrentTrackIndex(Math.max(0, currentTrackIndex - 1))}
           >
-            <SkipBack className="h-4 w-4" />
+            <SkipBack className="w-4 h-4" />
           </Button>
 
           <Button
@@ -186,9 +195,9 @@ export const AudioPlayer = ({ tracks }: AudioPlayerProps) => {
             onClick={togglePlay}
           >
             {isPlaying ? (
-              <Pause className="h-4 w-4" />
+              <Pause className="w-4 h-4" />
             ) : (
-              <Play className="h-4 w-4" />
+              <Play className="w-4 h-4" />
             )}
           </Button>
 
@@ -197,7 +206,7 @@ export const AudioPlayer = ({ tracks }: AudioPlayerProps) => {
             size="icon"
             onClick={() => setCurrentTrackIndex(Math.min(tracks.length - 1, currentTrackIndex + 1))}
           >
-            <SkipForward className="h-4 w-4" />
+            <SkipForward className="w-4 h-4" />
           </Button>
 
           <Button
@@ -206,13 +215,13 @@ export const AudioPlayer = ({ tracks }: AudioPlayerProps) => {
             onClick={toggleLoop}
             className={isLooping ? 'text-primary' : ''}
           >
-            <RotateCcw className="h-4 w-4" />
+            <RotateCcw className="w-4 h-4" />
           </Button>
 
           <select
             value={playbackRate}
             onChange={(e) => changePlaybackRate(Number(e.target.value))}
-            className="border rounded p-1 text-sm"
+            className="p-1 text-sm border rounded"
           >
             <option value="0.5">0.5x</option>
             <option value="1">1x</option>
@@ -228,9 +237,9 @@ export const AudioPlayer = ({ tracks }: AudioPlayerProps) => {
             onClick={toggleMute}
           >
             {isMuted ? (
-              <VolumeX className="h-4 w-4" />
+              <VolumeX className="w-4 h-4" />
             ) : (
-              <Volume2 className="h-4 w-4" />
+              <Volume2 className="w-4 h-4" />
             )}
           </Button>
           <Slider

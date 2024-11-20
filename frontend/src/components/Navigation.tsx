@@ -3,7 +3,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import {
   Home,
-  Settings,
   LogOut,
   Music
 } from 'lucide-react';

@@ -62,7 +62,7 @@ export const AudioPlayer = ({ tracks }: AudioPlayerProps) => {
         setIsPlaying(false);
       }
     };
-  }, [currentTrackIndex]);
+  }, [currentTrackIndex, tracks.length]);
 
 
   const handleVolumeChange = (value: number) => {
@@ -113,7 +113,10 @@ export const AudioPlayer = ({ tracks }: AudioPlayerProps) => {
           console.log('onPause', audioRef.current?.currentTime, currentTime);
           setIsPlaying(false);
         }}
-      />
+        crossOrigin="anonymous"
+      >
+        <track kind="captions" src="" />
+      </audio>
 
       <div className="flex items-center justify-between mb-4">
         <span className="text-sm font-medium">

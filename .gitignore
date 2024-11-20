@@ -20,5 +20,8 @@ backend/transcribe_cli.egg-info/*
 **/*.err
 **/*.err.*
 
+.vscode/
+.cursorignore
+.cursorrules
 node_modules/
 out/

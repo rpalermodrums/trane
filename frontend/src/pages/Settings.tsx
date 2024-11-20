@@ -41,22 +41,24 @@ export function Settings() {
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">Settings</h1>
+    <div className="container py-8 mx-auto">
+      <h1 className="mb-6 text-2xl font-bold">Settings</h1>
       
-      <form onSubmit={handleSubmit} className="space-y-6 max-w-md">
+      <form onSubmit={handleSubmit} className="max-w-md space-y-6">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Email</label>
+          <label className="text-sm font-medium" htmlFor="email">Email</label>
           <Input
             type="email"
+            id="email"
             value={settings.email}
             onChange={(e) => setSettings({ ...settings, email: e.target.value })}
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Default Model</label>
+          <label className="text-sm font-medium" htmlFor="defaultModel">Default Model</label>
           <select
+            id="defaultModel"
             value={settings.defaultModel}
             onChange={(e) => setSettings({ ...settings, defaultModel: e.target.value })}
             className="w-full p-2 border rounded"

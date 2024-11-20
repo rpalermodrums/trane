@@ -1,8 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-  ToastActionElement,
-  ToastProps,
-} from '@/components/ui/toast';
+import type { ToastActionElement, ToastProps } from '@/components/ui/toast';
 
 interface ToastOptions {
   title?: string;
@@ -19,7 +16,7 @@ export function useToast() {
 
   useEffect(() => {
     const timeouts = toasts.map((toast) => {
-      if (toast.duration !== Infinity) {
+      if (toast.duration !== Number.POSITIVE_INFINITY) {
         return setTimeout(() => {
           setToasts((prevToasts) =>
             prevToasts.filter((t) => t.id !== toast.id)
@@ -29,7 +26,9 @@ export function useToast() {
     });
 
     return () => {
-      timeouts.forEach((timeout) => timeout && clearTimeout(timeout));
+      for (const timeout of timeouts) {
+        timeout && clearTimeout(timeout);
+      }
     };
   }, [toasts]);
 

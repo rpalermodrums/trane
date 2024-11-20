@@ -144,7 +144,7 @@ export const AudioProcessor = () => {
         <div className="space-y-4">
           <h3 className="font-semibold">Selected Files ({files.length})</h3>
           {files.map((file, index) => (
-            <div key={index} className="flex items-center justify-between">
+            <div key={file.name} className="flex items-center justify-between">
               <span>{file.name}</span>
               <Button
                 variant="ghost"
@@ -160,8 +160,9 @@ export const AudioProcessor = () => {
 
       <div className="space-y-4">
         <div>
-          <label className="block mb-2 text-sm font-medium">Model</label>
+          <label htmlFor="model" className="block mb-2 text-sm font-medium">Model</label>
           <select
+            id="model"
             value={options.model}
             onChange={(e) => setOptions({ ...options, model: e.target.value })}
             className="block w-full p-2 bg-white border rounded"
@@ -173,8 +174,9 @@ export const AudioProcessor = () => {
         </div>
 
         <div>
-          <label className="block mb-2 text-sm font-medium">Priority</label>
+          <label htmlFor="priority" className="block mb-2 text-sm font-medium">Priority</label>
           <select
+            id="priority"
             value={options.priority}
             onChange={(e) => setOptions({ 
               ...options, 
