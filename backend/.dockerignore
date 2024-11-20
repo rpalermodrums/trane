@@ -1,6 +1,7 @@
 # Python
 __pycache__/
-*.py[cod]
+**/__pycache__/*
+**/*.py[cod]
 *$py.class
 *.so
 .Python
@@ -17,6 +18,54 @@ develop-eggs/
 .installed.cfg
 lib/
 lib64/
+
+.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.python-version  # pyenv
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+
+# Additional Django patterns
+media/  # if you're not serving media files from container
+static/  # if you're collecting static files during build
+*.pot
+*.mo
+/static  # collected static files directory
+
+# Temporary files
+*.bak
+*.tmp
+*.temp
+.DS_Store  # macOS specific
+Thumbs.db  # Windows specific
+
+# Development tools
+.ipynb_checkpoints
+*.ipynb
+.pre-commit-config.yaml
+pylintrc
+.flake8
+.isort.cfg
+setup.cfg
+tox.ini
+
+# Deployment files
+*.pem
+*.crt
+*.key
+*.csr
+
+# Logs and databases
+logs/
+*.log.*
+*.sql
+*.sqlite
 
 # Virtual Environment
 .env
@@ -67,3 +116,7 @@ Dockerfile
 # Documentation
 docs/
 *.md
+
+# Entrypoint
+!entrypoint-migrate.sh
+!wait-for-it.sh

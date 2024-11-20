@@ -13,6 +13,8 @@ celery-beat-logs
 **/*.pyd
 **/*.pyz
 backend/transcribe_cli.egg-info/*
+backend/staticfiles/*
+backend/mediafiles/*
 
 **/*.log
 **/*.log.*

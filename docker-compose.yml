@@ -10,8 +10,12 @@ services:
       - static_volume:/app/staticfiles
       - media_volume:/app/mediafiles
     depends_on:
-      - database
-      - redis
+      database:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
     expose:
       - '8000'
     ports:
@@ -53,13 +57,16 @@ services:
       - ./backend:/app
       - media_volume:/app/mediafiles
     depends_on:
-      - backend
-      - redis
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - webnet
 
   celery-beat:
-    build: ./backend
+    build:
+      context: ./backend
     command: celery -A transcribe beat -l info
     volumes:
       - ./backend:/app
@@ -67,8 +74,10 @@ services:
     env_file:
       - ./.env
     depends_on:
-      - backend
-      - redis
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - webnet
 
@@ -77,16 +86,46 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=database
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    ports:
+      - '5432:5432'
     networks:
       - webnet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   redis:
     image: redis:6
     networks:
       - webnet
+
+  migrations:
+    build:
+      context: ./backend
+    command: python manage.py migrate && python manage.py collectstatic --noinput
+    env_file:
+      - ./.env
+    volumes:
+      - ./backend:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/mediafiles
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - webnet
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
   postgres_data:
