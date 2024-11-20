@@ -4,54 +4,29 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
   Outlet,
   RouterProvider,
-  Link,
   createRouter,
   createRoute,
   createRootRoute,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/router-devtools'
-import { ProtectedRoute } from './components/ProtectedRoute';
-import Login from './components/Login';
-import Home from './pages/Home';
-import './index.css';
+import { ProtectedRoute } from './components/ProtectedRoute'
+import Login from './components/Login'
+import Home from './pages/Home'
+import './index.css'
 import { PlaybackView } from './pages/PlaybackView'
-import { Settings } from 'lucide-react'
+import { Settings } from './pages/Settings'
+import { Navigation } from './components/Navigation'
 
 const rootRoute = createRootRoute({
-  component: () => (
-    <>
-      <div className="p-2 flex gap-2">
-        <Link to="/" className="[&.active]:font-bold">
-          Home
-        </Link>{' '}
-        <Link to="/about" className="[&.active]:font-bold">
-          About
-        </Link>
-        <Link to="/login" className="[&.active]:font-bold">
-          Login
-        </Link>
-        <Link to="/settings" className="[&.active]:font-bold">
-          Settings
-        </Link>
+  component: () => {
+    return (
+      <div className="w-screen h-screen">
+        <Navigation />
+        <hr />
+        <Outlet />
+        <TanStackRouterDevtools />
       </div>
-      <hr />
-      <Outlet />
-      <TanStackRouterDevtools />
-    </>
-  ),
-})
-
-const indexRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/',
-  component: Home,
-});
-
-const aboutRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/about',
-  component: function About() {
-    return <div className="p-2">Hello from About!</div>
+    )
   },
 })
 
@@ -63,8 +38,14 @@ const loginRoute = createRoute({
 
 const protectedRoute = createRoute({
   getParentRoute: () => rootRoute,
-  id: 'protected', // Give it an ID instead of a path
+  id: 'protected',
   component: ProtectedRoute,
+});
+
+const indexRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/',
+  component: Home,
 });
 
 const playbackRoute = createRoute({
@@ -80,7 +61,6 @@ const settingsRoute = createRoute({
 });
 
 const routeTree = rootRoute.addChildren([
-  aboutRoute,
   loginRoute,
   protectedRoute.addChildren([
     indexRoute,

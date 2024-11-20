@@ -160,11 +160,11 @@ export const AudioProcessor = () => {
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-2">Model</label>
+          <label className="block mb-2 text-sm font-medium">Model</label>
           <select
             value={options.model}
             onChange={(e) => setOptions({ ...options, model: e.target.value })}
-            className="block w-full p-2 border rounded"
+            className="block w-full p-2 bg-white border rounded"
           >
             <option value="htdemucs">HTDemucs</option>
             <option value="mdx">MDX</option>
@@ -173,14 +173,14 @@ export const AudioProcessor = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">Priority</label>
+          <label className="block mb-2 text-sm font-medium">Priority</label>
           <select
             value={options.priority}
             onChange={(e) => setOptions({ 
               ...options, 
               priority: e.target.value as ProcessingOptions['priority'] 
             })}
-            className="block w-full p-2 border rounded"
+            className="block w-full p-2 bg-white border rounded"
           >
             <option value="low">Low</option>
             <option value="medium">Medium</option>
