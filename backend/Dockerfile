@@ -37,9 +37,7 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 
 # Copy project files
 COPY . .
-RUN pip install -e . && \
-    chmod +x entrypoint-migrate.sh && \
-    chmod +x wait-for-it.sh
+RUN pip install -e .
 
 # Collect static files
 RUN python manage.py collectstatic --noinput
