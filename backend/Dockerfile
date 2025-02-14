@@ -1,46 +1,25 @@
-# Build stage
-FROM python:3.11-slim AS builder
-
-ENV PYTHONUNBUFFERED=1
-WORKDIR /app
+# backend/Dockerfile
+FROM python:3.10-slim
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
     build-essential \
+    curl \
     git \
-    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Final stage
-FROM python:3.11-slim
-
-ENV PYTHONUNBUFFERED=1
+    # Set work directory
 WORKDIR /app
 
-# Install runtime dependencies only
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    libpq5 \
-    postgresql-client \
-    ffmpeg \
-    sox \
-    libsox-fmt-all \
-    && rm -rf /var/lib/apt/lists/*
+# Copy requirements and install them
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy Python packages from builder
-COPY --from=builder /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
-COPY --from=builder /usr/local/bin/ /usr/local/bin/
-
-# Copy project files
+# Copy the Django project
 COPY . .
-RUN pip install -e .
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
-
+# Expose port 8000 (Django's default port for gunicorn)
 EXPOSE 8000
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "transcribe.wsgi:application"]
+
+# Start gunicorn server
+CMD ["gunicorn", "trane.wsgi:application", "--bind", "0.0.0.0:8000"]
