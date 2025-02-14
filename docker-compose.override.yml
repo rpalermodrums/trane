@@ -1,0 +1,37 @@
+# version: "3.9"
+
+# services:
+#   django:
+#     environment:
+#       - DEBUG=1
+#       - DJANGO_DEBUG=1
+#     volumes:
+#       - ./backend:/app
+#       # Add local development media and static directories
+#       - django_media:/app/media
+#       - django_static:/app/static
+#     command: python manage.py runserver 0.0.0.0:8000
+
+#   dsp:
+#     environment:
+#       - FLASK_DEBUG=1
+#       - FLASK_ENV=development
+#     volumes:
+#       - ./backend:/app
+#       # Add development cache directories
+#       - dsp_cache:/tmp/librosa_cache
+#       - numba_cache:/tmp/numba_cache
+
+#   celery_worker:
+#     volumes:
+#       - ./backend:/app
+#       - dsp_cache:/tmp/librosa_cache
+#       - numba_cache:/tmp/numba_cache
+#     environment:
+#       - DJANGO_DEBUG=1
+
+# volumes:
+#   django_media:
+#   django_static:
+#   dsp_cache:
+#   numba_cache:

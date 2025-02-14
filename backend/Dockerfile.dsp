@@ -1,58 +1,63 @@
-# backend/Dockerfile.dsp
-FROM python:3.10-slim
+# syntax=docker/dockerfile:1
+FROM python:3.10-slim as builder
 
-# Install system dependencies including audio processing libraries and PostgreSQL
-RUN apt-get update && apt-get install -y \
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    curl \
-    git \
-    libsndfile1 \
-    libportaudio2 \
-    libasound2-dev \
     python3-dev \
     gcc \
-    postgresql \
-    postgresql-contrib \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Set environment variables for better Python performance
+# Create and activate virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy and install requirements
+COPY requirements.txt trane/realtime_dsp/requirements_dsp.txt ./
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir -r requirements_dsp.txt
+
+FROM python:3.10-slim as runtime
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libsndfile1 \
+    libportaudio2 \
+    libasound2-dev \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=off \
-    PIP_DISABLE_PIP_VERSION_CHECK=on \
     PYTHONPATH=/app \
-    NUMBA_CACHE_DIR=/tmp/numba_cache \
-    NUMBA_DISABLE_JIT=1
+    NUMBA_CACHE_DIR=/tmp/numba_cache
+    # NUMBA_DISABLE_JIT=1
 
 WORKDIR /app
 
-# Create a non-root user
+# Create non-root user
 RUN groupadd -r trane && useradd -r -g trane -m -s /bin/bash trane && \
-    mkdir -p /home/trane && chown -R trane:trane /home/trane
+    mkdir -p /home/trane && \
+    mkdir -p /tmp/librosa_cache /tmp/numba_cache && \
+    chown -R trane:trane /home/trane /tmp/librosa_cache /tmp/numba_cache
 
-# Copy requirements first for better caching
-COPY requirements.txt /app/
-COPY trane/realtime_dsp/requirements_dsp.txt /app/trane/realtime_dsp/
+# Copy application code
+COPY --chown=trane:trane . /app/
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir -r trane/realtime_dsp/requirements_dsp.txt
-
-# Copy the rest of the application
-COPY . /app/
-
-# Create necessary directories with proper permissions
-RUN mkdir -p /tmp/librosa_cache /tmp/numba_cache && \
-    chown -R trane:trane /tmp/librosa_cache && \
-    chown -R trane:trane /tmp/numba_cache && \
-    chown -R trane:trane /app && \
-    chmod -R 755 /app && \
+# Set permissions
+RUN chmod -R 755 /app && \
     chmod -R 777 /tmp/librosa_cache && \
     chmod -R 777 /tmp/numba_cache
 
-# Switch to non-root user
 USER trane
 
-# Default command (will be overridden by docker-compose for celery worker)
+# Expose DSP service port for clarity and tooling support
+EXPOSE 9000
+
 CMD ["python", "-m", "trane.realtime_dsp.dsp_service"]

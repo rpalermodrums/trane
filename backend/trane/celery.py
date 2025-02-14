@@ -13,12 +13,41 @@ app = Celery('trane')
 # Configure Celery using Django settings
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
-# Task routing
-app.conf.task_routes = {
-    'trane.realtime_dsp.tasks.process_audio_file': {'queue': 'audio'},
-    'trane.realtime_dsp.tasks.process_midi_events': {'queue': 'midi'},
-    'trane.realtime_dsp.tasks.cleanup_old_results': {'queue': 'maintenance'},
+# Explicit Redis configuration
+app.conf.broker_transport_options = {
+    'visibility_timeout': 3600,
+    'fanout_prefix': True,
+    'fanout_patterns': True,
+    'queue_order_strategy': 'priority',
 }
+
+# Force all tasks to use direct routing
+app.conf.task_default_exchange = 'direct'
+app.conf.task_default_exchange_type = 'direct'
+app.conf.task_default_routing_key = 'audio'
+app.conf.task_default_queue = 'audio'
+
+# Update task routes to use direct binding
+app.conf.task_routes = {
+    'trane.realtime_dsp.tasks.process_audio_file': {
+        'queue': 'audio',
+        'exchange': 'direct',
+        'routing_key': 'audio'
+    },
+    'trane.realtime_dsp.tasks.process_midi_events': {
+        'queue': 'midi',
+        'exchange': 'direct',
+        'routing_key': 'midi'
+    },
+    'trane.realtime_dsp.tasks.cleanup_old_results': {
+        'queue': 'maintenance',
+        'exchange': 'direct',
+        'routing_key': 'maintenance'
+    },
+}
+
+# Disable automatic queue creation
+app.conf.task_create_missing_queues = False
 
 # Configure task queues
 app.conf.task_queues = {

@@ -32,6 +32,13 @@ def upload_file(request):
                 'error': 'Unsupported file type'
             }, status=400)
         
+        # Create a ProcessingTask record so that the polling endpoint can find it
+        ProcessingTask.objects.create(
+            task_id=task.id,
+            task_type=file_type,
+            status='pending',
+        )
+        
         return JsonResponse({
             'task_id': task.id,
             'file_type': file_type,

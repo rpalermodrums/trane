@@ -5,11 +5,13 @@ import numpy as np
 import os
 import time
 import logging
+import json
 from redis import Redis
 from celery.utils.log import get_task_logger
 from typing import Dict, Any, Optional, List
 from django.utils import timezone
 from datetime import timedelta
+from django.core.exceptions import ObjectDoesNotExist
 
 from .feature_extraction import FeatureExtractor, AudioFeatures, MIDIFeatures
 from .models import ProcessingTask, ProcessingResult, PerformanceMetrics
@@ -20,12 +22,19 @@ logger = get_task_logger(__name__)
 # Initialize performance monitor
 performance_monitor = PerformanceMonitor()
 
+def default_converter(o):
+    """Convert numpy arrays to lists for JSON serialization."""
+    if isinstance(o, np.ndarray):
+        return o.tolist()
+    raise TypeError(f"Object of type {o.__class__.__name__} is not JSON serializable")
+
 # Configure Redis connection with retry logic
 def get_redis_client(max_retries=5, retry_delay=1):
     for attempt in range(max_retries):
         try:
             client = Redis(host='redis', port=6379, db=0)
             client.ping()
+            logger.info(f"Redis connection status: {client.ping()}")
             return client
         except Exception as e:
             if attempt == max_retries - 1:
@@ -45,16 +54,26 @@ except Exception as e:
 # Initialize feature extractor
 feature_extractor = FeatureExtractor()
 
-@shared_task(bind=True, max_retries=3)
+@shared_task(bind=True, queue='audio', autoretry_for=(Exception,), retry_backoff=True, max_retries=3)
 def process_audio_file(self, audio_path: str, chunk_size: Optional[int] = None) -> Dict[str, Any]:
-    """Process audio file asynchronously with optional chunking."""
-    # Create task record
-    task = ProcessingTask.objects.create(
+    """
+    Process audio file asynchronously with optional chunking.
+    If a ProcessingTask record exists (from the view), reuse it.
+    """
+    logger.info(f"Task {self.request.id} received for file: {audio_path}")
+    task_obj, created = ProcessingTask.objects.get_or_create(
         task_id=self.request.id,
-        task_type='audio',
-        status='pending'
+        defaults={
+            'task_type': 'audio',
+            'status': 'pending'
+        }
     )
-
+    # Log whether we created a new record or reused an existing one
+    if created:
+        logger.info(f"Created new ProcessingTask: {task_obj.task_id}")
+    else:
+        logger.info(f"Found existing ProcessingTask: {task_obj.task_id}")
+    
     logger.info(f"Starting audio processing for {audio_path}")
     start_time = time.time()
     
@@ -88,10 +107,13 @@ def process_audio_file(self, audio_path: str, chunk_size: Optional[int] = None) 
             features['processing_time'] = time.time() - start_time
             features['processed_at'] = time.time()
 
+            # Convert features to JSON-serializable format
+            features_serializable = json.loads(json.dumps(features, default=default_converter))
+
             # Cache the results if Redis is available
             if redis_client:
                 try:
-                    redis_client.setex(cache_key, CACHE_EXPIRY, str(features))
+                    redis_client.setex(cache_key, CACHE_EXPIRY, str(features_serializable))
                     logger.info(f"Cached results for {audio_path}")
                 except Exception as e:
                     logger.warning(f"Failed to cache results: {e}")
@@ -100,8 +122,8 @@ def process_audio_file(self, audio_path: str, chunk_size: Optional[int] = None) 
 
             # Store results
             ProcessingResult.objects.create(
-                task=task,
-                features=features,
+                task=task_obj,
+                features=features_serializable,
                 source_file=audio_path,
                 processing_time=time.time() - start_time,
                 metadata={
@@ -111,7 +133,7 @@ def process_audio_file(self, audio_path: str, chunk_size: Optional[int] = None) 
                 }
             )
 
-            return features
+            return features_serializable
 
         except Exception as e:
             logger.error(f"Processing failed for {audio_path}: {e}")
@@ -119,9 +141,9 @@ def process_audio_file(self, audio_path: str, chunk_size: Optional[int] = None) 
 
     except Exception as e:
         logger.error(f"Task failed for {audio_path}: {e}")
-        task.status = 'failed'
-        task.error_message = str(e)
-        task.save()
+        task_obj.status = 'failed'
+        task_obj.error_message = str(e)
+        task_obj.save()
 
         if self.request.retries < self.max_retries:
             logger.info(f"Retrying task for {audio_path}")
@@ -138,15 +160,16 @@ def process_complete_audio(audio_path: str) -> Dict[str, Any]:
     
     # Convert to dictionary format
     return {
-        'pitch': features.pitch,
+        'pitch_mean': features.pitch_mean,
+        'pitch_std': features.pitch_std,
         'pitch_confidence': features.pitch_confidence,
         'tempo': features.tempo,
         'beat_positions': features.beat_positions,
         'onset_positions': features.onset_positions,
         'spectral_features': {
-            'centroid': features.spectral_centroid,
-            'bandwidth': features.spectral_bandwidth,
-            'rolloff': features.spectral_rolloff
+            'centroid': features.spectral_centroid_mean,
+            'bandwidth': features.spectral_bandwidth_mean,
+            'rolloff': features.spectral_rolloff_mean
         },
         'dynamics': {
             'rms_energy': features.rms_energy,
@@ -185,8 +208,8 @@ def process_audio_chunks(audio_path: str, chunk_size: int) -> Dict[str, Any]:
         chunk_features = feature_extractor.extract_audio_features(y_chunk, time.time())
         
         # Collect features for aggregation
-        if chunk_features.pitch is not None:
-            all_pitches.append(chunk_features.pitch)
+        if chunk_features.pitch_mean is not None:
+            all_pitches.append(chunk_features.pitch_mean)
             all_pitch_confidences.append(chunk_features.pitch_confidence)
         if chunk_features.onset_positions:
             all_onsets.extend(chunk_features.onset_positions)
@@ -198,7 +221,13 @@ def process_audio_chunks(audio_path: str, chunk_size: int) -> Dict[str, Any]:
         # Store chunk-specific features
         features['chunks'].append({
             'chunk_index': i,
-            'pitch': chunk_features.pitch,
+            'pitch': chunk_features.pitch_mean,
+            'pitch_mean': chunk_features.pitch_mean,
+            'pitch_std': chunk_features.pitch_std,
+            'pitch_confidence': chunk_features.pitch_confidence,
+            'tempo': chunk_features.tempo,
+            'beat_positions': chunk_features.beat_positions,
+            'onset_positions': chunk_features.onset_positions,
             'rms_energy': chunk_features.rms_energy,
             'is_speech': chunk_features.is_speech,
             'duration': len(y_chunk) / 22050  # assuming sr=22050
@@ -262,8 +291,8 @@ def process_midi_events(self, events: List[Dict[str, Any]], timestamp: float) ->
             timestamp=timestamp
         )
         
-        # Convert to dictionary format
-        return {
+        # Convert to dictionary format and ensure JSON serializable
+        features_dict = {
             'active_notes': features.active_notes,
             'note_density': features.note_density,
             'average_velocity': features.average_velocity,
@@ -275,6 +304,9 @@ def process_midi_events(self, events: List[Dict[str, Any]], timestamp: float) ->
             'chord_estimate': features.chord_estimate,
             'timestamp': features.timestamp
         }
+        
+        features_serializable = json.loads(json.dumps(features_dict, default=default_converter))
+        return features_serializable
         
     except Exception as e:
         logger.error(f"Error processing MIDI events: {e}")
@@ -332,4 +364,8 @@ def log_performance_metrics():
 
     except Exception as e:
         logger.error(f"Error logging performance metrics: {e}")
-        raise 
+        raise
+
+@shared_task
+def test_task():
+    logger.info("=== TEST TASK EXECUTED SUCCESSFULLY ===")

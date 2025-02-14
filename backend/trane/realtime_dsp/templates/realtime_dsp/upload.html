@@ -13,7 +13,7 @@
             
             <!-- Upload Form -->
             <div class="mb-8">
-                <form id="uploadForm" class="space-y-4">
+                <form id="uploadForm" class="space-y-4" enctype="multipart/form-data">
                     <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                         <input type="file" id="fileInput" class="hidden" accept=".wav,.mp3,.ogg,.mid">
                         <label for="fileInput" class="cursor-pointer">
@@ -97,17 +97,22 @@
                     clearInterval(interval);
                     showStatus('Error checking results', 'error');
                 }
-            }, 1000);
+            }, 5000);
         }
 
         function showStatus(message, type) {
             const status = document.getElementById('status');
             status.className = 'mb-4 p-4 rounded-lg';
-            status.classList.add(
-                type === 'error' ? 'bg-red-100 text-red-700' :
-                type === 'success' ? 'bg-green-100 text-green-700' :
-                'bg-blue-100 text-blue-700'
-            );
+            if (type === 'error') {
+                status.classList.add('bg-red-100');
+                status.classList.add('text-red-700');
+            } else if (type === 'success') {
+                status.classList.add('bg-green-100');
+                status.classList.add('text-green-700');
+            } else {
+                status.classList.add('bg-blue-100');
+                status.classList.add('text-blue-700');
+            }
             status.textContent = message;
             status.classList.remove('hidden');
         }

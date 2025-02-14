@@ -2,7 +2,7 @@
 import os
 # Configure Numba to disable caching when running as non-root
 os.environ['NUMBA_CACHE_DIR'] = '/tmp/numba_cache'
-os.environ['NUMBA_DISABLE_JIT'] = '1'  # Disable JIT compilation for now
+# os.environ['NUMBA_DISABLE_JIT'] = '1'  # Disable JIT compilation for now
 
 import numpy as np
 import librosa
@@ -35,14 +35,22 @@ logger = logging.getLogger(__name__)
 class AudioFeatures(FeatureSet):
     """Container for extracted audio features."""
     timestamp: float
-    pitch: Optional[float] = None
-    pitch_confidence: Optional[float] = None
-    tempo: Optional[float] = None
-    beat_positions: Optional[List[float]] = None
-    onset_positions: Optional[List[float]] = None
-    spectral_centroid: Optional[float] = None
-    spectral_bandwidth: Optional[float] = None
-    spectral_rolloff: Optional[float] = None
+    # Remove the standalone 'pitch' field
+    pitch_mean: float
+    pitch_std: float
+    pitch_confidence: float
+    pitch_yin_mean: float
+    pitch_range: float
+    spectral_centroid_mean: float
+    spectral_centroid_std: float
+    spectral_bandwidth_mean: float
+    spectral_contrast_mean: float
+    spectral_flatness_mean: float
+    spectral_rolloff_mean: float
+    spectral_variance: float
+    tempo: float
+    beat_positions: List[float]
+    onset_positions: List[float]
     rms_energy: Optional[float] = None
     zero_crossing_rate: Optional[float] = None
     mfcc: Optional[np.ndarray] = None
@@ -53,15 +61,22 @@ class AudioFeatures(FeatureSet):
         """Convert features to dictionary format."""
         return {
             'timestamp': self.timestamp,
-            'pitch': self.pitch,
+            'pitch_mean': self.pitch_mean,
+            'pitch_std': self.pitch_std,
             'pitch_confidence': self.pitch_confidence,
+            'pitch_yin_mean': self.pitch_yin_mean,
+            'pitch_range': self.pitch_range,
             'tempo': self.tempo,
             'beat_positions': self.beat_positions,
             'onset_positions': self.onset_positions,
             'spectral_features': {
-                'centroid': self.spectral_centroid,
-                'bandwidth': self.spectral_bandwidth,
-                'rolloff': self.spectral_rolloff
+                'centroid_mean': self.spectral_centroid_mean,
+                'centroid_std': self.spectral_centroid_std,
+                'bandwidth_mean': self.spectral_bandwidth_mean,
+                'contrast_mean': self.spectral_contrast_mean,
+                'flatness_mean': self.spectral_flatness_mean,
+                'rolloff_mean': self.spectral_rolloff_mean,
+                'variance': self.spectral_variance
             },
             'dynamics': {
                 'rms_energy': self.rms_energy,
@@ -71,7 +86,7 @@ class AudioFeatures(FeatureSet):
                 'mfcc': self.mfcc.tolist() if self.mfcc is not None else None,
                 'chroma': self.chroma.tolist() if self.chroma is not None else None
             },
-            'is_speech': self.is_speech
+            'is_speech': self.is_speech,
         }
     
     def merge(self, other: 'AudioFeatures') -> 'AudioFeatures':
@@ -304,9 +319,14 @@ class FeatureExtractor(FeatureExtractorBase, AudioProcessorInterface, MIDIProces
         # Get results
         spectral_features = spectral_future.result()
         pitch_data = pitch_future.result()
+        tempo, beat_frames = librosa.beat.beat_track(y=audio_data, sr=self.sample_rate)
+        onset_frames = librosa.onset.onset_detect(y=audio_data, sr=self.sample_rate)
         
         return AudioFeatures(
             timestamp=time.time(),
+            tempo=tempo,
+            beat_positions=librosa.frames_to_time(beat_frames, sr=self.sample_rate).tolist(),
+            onset_positions=librosa.frames_to_time(onset_frames, sr=self.sample_rate).tolist(),
             **spectral_features,
             **pitch_data
         )
@@ -324,22 +344,31 @@ class FeatureExtractor(FeatureExtractorBase, AudioProcessorInterface, MIDIProces
         # Process in parallel
         spectral_future = self.thread_pool.submit(
             self._compute_spectral_features_cpu,
-            D
+            audio_data,
+            self.sample_rate
         )
         
         pitch_future = self.thread_pool.submit(
             self._compute_pitch_cpu,
-            audio_data
+            audio_data,
+            self.sample_rate
         )
         
         # Get results
         spectral_features = spectral_future.result()
         pitch_data = pitch_future.result()
         
+        # Add beat tracking
+        tempo, beat_frames = librosa.beat.beat_track(y=audio_data, sr=self.sample_rate)
+        onset_frames = librosa.onset.onset_detect(y=audio_data, sr=self.sample_rate)
+        
         return AudioFeatures(
             timestamp=time.time(),
+            tempo=tempo,
+            beat_positions=librosa.frames_to_time(beat_frames, sr=self.sample_rate).tolist(),
+            onset_positions=librosa.frames_to_time(onset_frames, sr=self.sample_rate).tolist(),
             **spectral_features,
-            **pitch_data
+            **pitch_data,
         )
     
     def extract_midi_features(self, 
@@ -410,4 +439,50 @@ class FeatureExtractor(FeatureExtractorBase, AudioProcessorInterface, MIDIProces
         
         # Clear GPU memory
         if hasattr(self, 'device') and self.device.type == 'cuda':
-            torch.cuda.empty_cache() 
+            torch.cuda.empty_cache()
+
+    def _compute_spectral_features_cpu(self, y: np.ndarray, sr: int) -> Dict[str, float]:
+        """Compute spectral features using Numba-optimized calculations."""
+        spectral_centroid = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
+        spectral_bandwidth = librosa.feature.spectral_bandwidth(y=y, sr=sr)[0]
+        spectral_contrast = librosa.feature.spectral_contrast(y=y, sr=sr)[0]
+        spectral_flatness = librosa.feature.spectral_flatness(y=y)[0]
+        spectral_rolloff = librosa.feature.spectral_rolloff(y=y, sr=sr)[0]
+
+        return {
+            'spectral_centroid_mean': float(np.mean(spectral_centroid)),
+            'spectral_centroid_std': float(np.std(spectral_centroid)),
+            'spectral_bandwidth_mean': float(np.mean(spectral_bandwidth)),
+            'spectral_contrast_mean': float(np.mean(spectral_contrast)),
+            'spectral_flatness_mean': float(np.mean(spectral_flatness)),
+            'spectral_rolloff_mean': float(np.mean(spectral_rolloff)),
+            'spectral_variance': float(np.var(y))
+        }
+
+    def _compute_pitch_cpu(self, y: np.ndarray, sr: int) -> Dict[str, float]:
+        """Compute pitch-related features using optimized CPU calculations."""
+        try:
+            pitches, magnitudes = librosa.piptrack(y=y, sr=sr)
+            pitch_mean = np.mean(pitches[pitches > 0])
+            pitch_std = np.std(pitches[pitches > 0])
+            
+            # Additional pitch detection using YIN algorithm
+            pitch_yin = librosa.yin(y, fmin=librosa.note_to_hz('C2'), fmax=librosa.note_to_hz('C7'))
+            pitch_yin = pitch_yin[~np.isnan(pitch_yin)]
+            
+            return {
+                'pitch_mean': float(pitch_mean),
+                'pitch_std': float(pitch_std),
+                'pitch_confidence': float(np.mean(magnitudes)),
+                'pitch_yin_mean': float(np.mean(pitch_yin)) if len(pitch_yin) > 0 else 0.0,
+                'pitch_range': float(np.ptp(pitches[pitches > 0])) if len(pitches[pitches > 0]) > 0 else 0.0
+            }
+        except Exception as e:
+            logger.error(f"Pitch computation failed: {str(e)}")
+            return {
+                'pitch_mean': 0.0,
+                'pitch_std': 0.0,
+                'pitch_confidence': 0.0,
+                'pitch_yin_mean': 0.0,
+                'pitch_range': 0.0
+            } 
