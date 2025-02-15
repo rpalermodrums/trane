@@ -1,6 +1,6 @@
 .env
-frontend/node_modules
-frontend/dist
+trane-ui/node_modules
+trane-ui/dist
 venv
 postgres_data
 static_volume

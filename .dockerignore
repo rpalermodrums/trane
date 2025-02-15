@@ -78,7 +78,8 @@ coverage.xml
 *.flac
 /data/
 .DS_Store
-node_modules/
+**/node_modules/
+**/dist/
 *.pid
 *.sock
 

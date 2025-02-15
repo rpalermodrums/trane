@@ -39,13 +39,13 @@ services:
   frontend:
     env_file: .env
     build:
-      context: ./frontend
+      context: ./trane-ui
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
     volumes:
       - type: bind
-        source: ./frontend
+        source: ./trane-ui
         target: /app
         consistency: delegated
       - node_modules:/app/node_modules
@@ -65,6 +65,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    expose:
+      - 8000
     volumes:
       - ./backend:/app
       - ./media:/app/media
@@ -76,13 +78,32 @@ services:
     networks:
       - trane_network
 
+  django-migrate:
+    env_file: .env
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: python manage.py migrate 2>/dev/null
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      django:
+        condition: service_started
+    networks:
+      - trane_network
+
   dsp:
     env_file: .env
     build:
       context: ./backend
-      dockerfile: Dockerfile.dsp
+      dockerfile: Dockerfile
+    command: python -m trane.realtime_dsp.dsp_service
     ports:
       - "9000:9000"
+    expose:
+      - 9000
     volumes:
       - ./backend:/app
     deploy:
@@ -103,7 +124,7 @@ services:
     env_file: .env
     build:
       context: ./backend
-      dockerfile: Dockerfile.dsp
+      dockerfile: Dockerfile
     user: "${UID:-1000}:${GID:-1000}"
     command: celery -A trane worker --loglevel=debug --concurrency=2 -Q audio,midi,maintenance --without-gossip --without-mingle --without-heartbeat -O fair
     volumes:
