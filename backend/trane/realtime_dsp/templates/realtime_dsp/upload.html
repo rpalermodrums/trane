@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSP File Upload</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
+            <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Audio/MIDI Processing</h1>
+            
+            <!-- Upload Form -->
+            <div class="mb-8">
+                <form id="uploadForm" class="space-y-4" enctype="multipart/form-data">
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                        <input type="file" id="fileInput" class="hidden" accept=".wav,.mp3,.ogg,.mid">
+                        <label for="fileInput" class="cursor-pointer">
+                            <div class="text-gray-600">
+                                <svg class="mx-auto h-12 w-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                </svg>
+                                <p class="text-sm">Click to upload or drag and drop</p>
+                                <p class="text-xs text-gray-500 mt-1">WAV, MP3, OGG, or MIDI files</p>
+                            </div>
+                        </label>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
+                        Process File
+                    </button>
+                </form>
+            </div>
+
+            <!-- Status and Results -->
+            <div id="status" class="hidden mb-4 p-4 rounded-lg"></div>
+            <div id="results" class="hidden">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Results</h2>
+                <pre id="resultContent" class="bg-gray-50 p-4 rounded-lg overflow-auto max-h-96"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('fileInput');
+            const status = document.getElementById('status');
+            const results = document.getElementById('results');
+            const resultContent = document.getElementById('resultContent');
+
+            if (!fileInput.files.length) {
+                showStatus('Please select a file', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                // Upload file
+                showStatus('Uploading file...', 'info');
+                const response = await fetch('/dsp/upload/', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Upload failed');
+                }
+
+                // Poll for results
+                showStatus('Processing file...', 'info');
+                pollResults(data.task_id);
+
+            } catch (error) {
+                showStatus(error.message, 'error');
+            }
+        });
+
+        async function pollResults(taskId) {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/dsp/result/${taskId}/`);
+                    const data = await response.json();
+
+                    if (data.status === 'completed') {
+                        clearInterval(interval);
+                        showStatus('Processing completed!', 'success');
+                        showResults(data.result);
+                    } else if (data.status === 'failed') {
+                        clearInterval(interval);
+                        showStatus(`Processing failed: ${data.error}`, 'error');
+                    }
+                } catch (error) {
+                    clearInterval(interval);
+                    showStatus('Error checking results', 'error');
+                }
+            }, 5000);
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.className = 'mb-4 p-4 rounded-lg';
+            if (type === 'error') {
+                status.classList.add('bg-red-100');
+                status.classList.add('text-red-700');
+            } else if (type === 'success') {
+                status.classList.add('bg-green-100');
+                status.classList.add('text-green-700');
+            } else {
+                status.classList.add('bg-blue-100');
+                status.classList.add('text-blue-700');
+            }
+            status.textContent = message;
+            status.classList.remove('hidden');
+        }
+
+        function showResults(result) {
+            const results = document.getElementById('results');
+            const resultContent = document.getElementById('resultContent');
+            resultContent.textContent = JSON.stringify(result, null, 2);
+            results.classList.remove('hidden');
+        }
+
+        // Drag and drop handling
+        const dropZone = document.querySelector('.border-dashed');
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            dropZone.classList.add('border-blue-500', 'bg-blue-50');
+        }
+
+        function unhighlight(e) {
+            dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+        }
+
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            document.getElementById('fileInput').files = files;
+        }
+    </script>
+</body>
+</html> 

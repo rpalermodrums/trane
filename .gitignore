@@ -1,7 +1,10 @@
 .env
-frontend/node_modules
-frontend/dist
+trane-ui/node_modules
+trane-ui/dist
 venv
+lib
+bin
+pyvenv.cfg
 postgres_data
 static_volume
 media_volume
@@ -27,3 +30,26 @@ backend/mediafiles/*
 .cursorrules
 node_modules/
 out/
+
+# Audio files 
+# NB: We can include any files that we mean to keep in the repo by adding them to the ! prefix
+# e.g. !myfile.wav
+*.aac
+*.aif
+*.aifc
+*.aiff
+*.aiffc
+*.avi
+*.flac
+*.m4a
+*.m4b
+*.m4p
+*.m4v
+*.mid
+*.midi
+*.mov
+*.mp3
+*.mp4
+*.wav
+*.webm
+*.wmv

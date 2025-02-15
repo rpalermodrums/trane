@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  frontend:
+    build:
+      target: installer
+    # Override the command to run the Vite dev server
+    command: pnpm run dev
+    # You might want to remap ports for the Vite server:
+    ports:
+      - "3000:3000"
+    # Ensure that your local source changes are picked up by the container.
+    volumes:
+      - type: bind
+        source: ./trane-ui
+        target: /app

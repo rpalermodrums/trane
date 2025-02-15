@@ -1,0 +1,108 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+static/
+
+# Docker
+.docker/
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# Cache and temp files
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+*.mo
+*.pot
+
+# Project specific
+/tmp/
+*.wav
+*.mp3
+*.aac
+*.flac
+/data/
+.DS_Store
+**/node_modules/
+**/dist/
+**/.pnpm-store/
+*.pid
+*.sock
+
+# Audio files 
+# NB: We can include any files that we want to use locally using volumes
+*.aac
+*.aif
+*.aifc
+*.aiff
+*.aiffc
+*.avi
+*.flac
+*.m4a
+*.m4b
+*.m4p
+*.m4v
+*.mid
+*.midi
+*.mov
+*.mp3
+*.mp4
+*.wav
+*.webm
+*.wmv
+

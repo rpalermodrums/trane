@@ -1,138 +1,171 @@
+version: "3.9"
+
 services:
-  backend:
-    build:
-      context: ./backend
-    command: python manage.py runserver 0.0.0.0:8000
-    env_file:
-      - ./.env
-    volumes:
-      - ./backend:/app
-      - static_volume:/app/staticfiles
-      - media_volume:/app/mediafiles
-    depends_on:
-      database:
-        condition: service_healthy
-      migrations:
-        condition: service_completed_successfully
-      redis:
-        condition: service_started
-    expose:
-      - '8000'
+  postgres:
+    env_file: .env
+    image: postgres:15-alpine
     ports:
-      - '8000:8000'
-    networks:
-      - webnet
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  frontend:
-    build:
-      context: ./frontend
-      target: development
-    ports:
-      - '3000:3000'
-    networks:
-      - webnet
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - ./frontend:/app
-      - node_modules_volume:/app/node_modules
-    depends_on:
-      backend:
-        condition: service_healthy
+      - postgres_data:/var/lib/postgresql/data
     environment:
-      - NODE_ENV=development
-    command: pnpm dev
-
-  celery:
-    build:
-      context: ./backend
-    command: celery -A transcribe worker -l info
-    env_file:
-      - ./.env
-    volumes:
-      - ./backend:/app
-      - media_volume:/app/mediafiles
-    depends_on:
-      database:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    networks:
-      - webnet
-
-  celery-beat:
-    build:
-      context: ./backend
-    command: celery -A transcribe beat -l info
-    volumes:
-      - ./backend:/app
-      - celery_beat_logs:/var/log/celery
-    env_file:
-      - ./.env
-    depends_on:
-      database:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    networks:
-      - webnet
-
-  database:
-    image: postgres:16
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
-    environment:
-      - POSTGRES_HOST_AUTH_METHOD=trust
-    ports:
-      - '5432:5432'
-    networks:
-      - webnet
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 10s
+    networks:
+      - trane_network
 
   redis:
-    image: redis:6
+    env_file: .env
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --save 60 1 --loglevel debug
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     networks:
-      - webnet
+      - trane_network
 
-  migrations:
+  frontend:
+    env_file: .env
+    build:
+      context: ./trane-ui
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - type: bind
+        source: ./trane-ui
+        target: /app
+        consistency: delegated
+      - node_modules:/app/node_modules
+      - dist:/app/dist
+    networks:
+      - trane_network
+    depends_on:
+      - redis
+      - postgres
+      - dsp
+      - django
+
+  django:
+    env_file: .env
     build:
       context: ./backend
-    command: python manage.py migrate && python manage.py collectstatic --noinput
-    env_file:
-      - ./.env
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    expose:
+      - 8000
     volumes:
       - ./backend:/app
-      - static_volume:/app/staticfiles
-      - media_volume:/app/mediafiles
+      - ./media:/app/media
     depends_on:
-      database:
-        condition: service_healthy
       redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - trane_network
+
+  django-migrate:
+    env_file: .env
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: python manage.py migrate 2>/dev/null
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      django:
         condition: service_started
     networks:
-      - webnet
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      - trane_network
 
-volumes:
-  postgres_data:
-  static_volume:
-  media_volume:
-  celery_beat_logs:
-  node_modules_volume:
+  dsp:
+    env_file: .env
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: python -m trane.realtime_dsp.dsp_service
+    ports:
+      - "9000:9000"
+    expose:
+      - 9000
+    volumes:
+      - ./backend:/app
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - trane_network
+
+  celery_worker:
+    env_file: .env
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    user: "${UID:-1000}:${GID:-1000}"
+    command: celery -A trane worker --loglevel=debug --concurrency=2 -Q audio,midi,maintenance --without-gossip --without-mingle --without-heartbeat -O fair
+    volumes:
+      - ./backend:/app
+      - /tmp/librosa_cache:/tmp/librosa_cache
+      - /tmp/numba_cache:/tmp/numba_cache
+      - ./media:/app/media
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    depends_on:
+      redis:
+        condition: service_healthy
+      dsp:
+        condition: service_started
+    networks:
+      - trane_network
+
+  nginx-proxy:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - django
+    networks:
+      - trane_network
 
 networks:
-  webnet:
+  trane_network:
+    driver: bridge
+
+volumes:
+  redis_data:
+  postgres_data:
+  node_modules:
+  dist:
