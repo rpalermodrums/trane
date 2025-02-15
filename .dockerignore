@@ -80,12 +80,29 @@ coverage.xml
 .DS_Store
 **/node_modules/
 **/dist/
+**/.pnpm-store/
 *.pid
 *.sock
 
-# Audio files
-*.wav
-*.mp3
+# Audio files 
+# NB: We can include any files that we want to use locally using volumes
 *.aac
+*.aif
+*.aifc
+*.aiff
+*.aiffc
+*.avi
 *.flac
+*.m4a
+*.m4b
+*.m4p
+*.m4v
+*.mid
+*.midi
+*.mov
+*.mp3
+*.mp4
+*.wav
+*.webm
+*.wmv
 

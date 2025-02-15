@@ -10,4 +10,14 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    port: 3000,
+    host: true,
+    allowedHosts: [
+      "localhost",
+      ".trane.orb.local",
+      ".ryanpalermo.dev",
+      ".trane-ai.com",
+    ],
+  },
 })

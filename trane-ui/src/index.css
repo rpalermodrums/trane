@@ -1,56 +1,58 @@
 @import "tailwindcss";
-
 @plugin "tailwindcss-animate";
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* Typography and Base */
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --background: hsl(0 0% 100%);
-  --foreground: hsl(222.2 84% 4.9%);
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(222.2 84% 4.9%);
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(222.2 84% 4.9%);
-  --primary: hsl(222.2 47.4% 11.2%);
-  --primary-foreground: hsl(210 40% 98%);
-  --secondary: hsl(210 40% 96.1%);
-  --secondary-foreground: hsl(222.2 47.4% 11.2%);
-  --muted: hsl(210 40% 96.1%);
-  --muted-foreground: hsl(215.4 16.3% 46.9%);
-  --accent: hsl(210 40% 96.1%);
-  --accent-foreground: hsl(222.2 47.4% 11.2%);
-  --destructive: hsl(0 84.2% 60.2%);
-  --destructive-foreground: hsl(210 40% 98%);
-  --border: hsl(214.3 31.8% 91.4%);
-  --input: hsl(214.3 31.8% 91.4%);
-  --ring: hsl(222.2 84% 4.9%);
-  --chart-1: hsl(12 76% 61%);
-  --chart-2: hsl(173 58% 39%);
-  --chart-3: hsl(197 37% 24%);
-  --chart-4: hsl(43 74% 66%);
-  --chart-5: hsl(27 87% 67%);
+
+  /* Dark Mode Base (Professional tool with edge):
+     - A deep, dark navy background sets a professional, modern stage.
+     - High-contrast, slightly desaturated light text ensures readability.
+     - Bold accents in saturated magenta-red, vibrant gold, and neon turquoise add creative, unexpected pops reminiscent of Basquiat and Dalí.
+  */
+  --background: hsl(230, 20%, 8%);           /* Default deep dark navy for fallback */
+  --foreground: hsl(210, 25%, 85%);
+  --card: hsl(230, 20%, 12%);
+  --card-foreground: hsl(210, 25%, 90%);
+  --popover: hsl(230, 20%, 12%);
+  --popover-foreground: hsl(210, 25%, 90%);
+  --primary: hsl(345, 80%, 45%);
+  --primary-foreground: hsl(210, 25%, 95%);
+  --secondary: hsl(45, 100%, 50%);
+  --secondary-foreground: hsl(210, 25%, 95%);
+  --accent: hsl(185, 80%, 45%);
+  --accent-foreground: hsl(210, 25%, 95%);
+  --destructive: hsl(10, 80%, 55%);
+  --destructive-foreground: hsl(210, 25%, 95%);
+  --muted: hsl(210, 15%, 20%);
+  --muted-foreground: hsl(210, 15%, 70%);
+  --border: hsl(210, 15%, 25%);
+  --input: hsl(210, 15%, 25%);
+  --ring: var(--primary);
+  --chart-1: hsl(12, 76%, 61%);
+  --chart-2: hsl(173, 58%, 39%);
+  --chart-3: hsl(197, 37%, 24%);
+  --chart-4: hsl(43, 74%, 66%);
+  --chart-5: hsl(27, 87%, 67%);
   --radius: 0.6rem;
 }
 
 a {
   font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+  color: var(--primary);
+  text-decoration: none;
 }
 a:hover {
-  color: #535bf2;
+  color: var(--accent);
 }
 
 body {
@@ -59,6 +61,10 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--background);
+  background-image: var(--background-texture, none);
+  background-size: cover;
+  color: var(--foreground);
 }
 
 h1 {
@@ -73,56 +79,84 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
   cursor: pointer;
   transition: border-color 0.25s;
 }
 button:hover {
-  border-color: #646cff;
+  border-color: var(--accent);
+}
+.dark button:hover {
+  /* Edgy neon-like glow for dark mode hover */
+  box-shadow: 0 0 5px var(--accent);
 }
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* Light Mode Overrides:
+   Use a subtle light neutral background (#fafafa) to differentiate the outer container
+   from pure white card backgrounds for improved separation.
+*/
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    --background: #fafafa;
+    --foreground: #213547;
+    --card: #ffffff;
+    --card-foreground: #213547;
+    --popover: #ffffff;
+    --popover-foreground: #213547;
+    --primary: #646cff;
+    --primary-foreground: #ffffff;
+    --secondary: #f5a623;
+    --secondary-foreground: #ffffff;
+    --accent: #00cec9;
+    --accent-foreground: #ffffff;
+    --destructive: #dc2626;
+    --destructive-foreground: #ffffff;
+    --muted: #f3f4f6;
+    --muted-foreground: #6b7280;
+    --border: #e5e7eb;
+    --input: #e5e7eb;
+    --ring: #646cff;
   }
   a:hover {
-    color: #747bff;
+    color: var(--accent);
   }
   button {
     background-color: #f9f9f9;
+    color: #213547;
   }
 }
 
+/* Dark Mode Overrides:
+   Refine background tone to a deep charcoal/very dark blue for improved contrast,
+   and add a faint gradient texture for depth reminiscent of jazz album covers.
+*/
 .dark {
-  --background: hsl(222.2 84% 4.9%);
-  --foreground: hsl(210 40% 98%);
-  --card: hsl(222.2 84% 4.9%);
-  --card-foreground: hsl(210 40% 98%);
-  --popover: hsl(222.2 84% 4.9%);
-  --popover-foreground: hsl(210 40% 98%);
-  --primary: hsl(210 40% 98%);
-  --primary-foreground: hsl(222.2 47.4% 11.2%);
-  --secondary: hsl(217.2 32.6% 17.5%);
-  --secondary-foreground: hsl(210 40% 98%);
-  --muted: hsl(217.2 32.6% 17.5%);
-  --muted-foreground: hsl(215 20.2% 65.1%);
-  --accent: hsl(217.2 32.6% 17.5%);
-  --accent-foreground: hsl(210 40% 98%);
-  --destructive: hsl(0 62.8% 30.6%);
-  --destructive-foreground: hsl(210 40% 98%);
-  --border: hsl(217.2 32.6% 17.5%);
-  --input: hsl(217.2 32.6% 17.5%);
-  --ring: hsl(212.7 26.8% 83.9%);
-  --chart-1: hsl(220 70% 50%);
-  --chart-2: hsl(160 60% 45%);
-  --chart-3: hsl(30 80% 55%);
-  --chart-4: hsl(280 65% 60%);
-  --chart-5: hsl(340 75% 55%);
+  --background: hsl(230, 20%, 10%);
+  --foreground: hsl(210, 25%, 85%);
+  --card: hsl(230, 20%, 12%);
+  --card-foreground: hsl(210, 25%, 90%);
+  --popover: hsl(230, 20%, 12%);
+  --popover-foreground: hsl(210, 25%, 90%);
+  --primary: hsl(345, 80%, 45%);
+  --primary-foreground: hsl(210, 25%, 95%);
+  --secondary: hsl(45, 100%, 50%);
+  --secondary-foreground: hsl(210, 25%, 95%);
+  --accent: hsl(185, 80%, 45%);
+  --accent-foreground: hsl(210, 25%, 95%);
+  --destructive: hsl(10, 80%, 55%);
+  --destructive-foreground: hsl(210, 25%, 95%);
+  --muted: hsl(210, 15%, 20%);
+  --muted-foreground: hsl(210, 15%, 70%);
+  --border: hsl(210, 15%, 25%);
+  --input: hsl(210, 15%, 25%);
+  --ring: var(--primary);
+  /* Faint gradient texture for added depth */
+  --background-texture: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.02) 50%, rgba(255, 255, 255, 0.02) 75%, transparent 75%, transparent);
 }
 
 @theme inline {
@@ -156,11 +190,16 @@ button:focus-visible {
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* Base layer: consistent borders, focus styles, and placeholder theming */
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+  }
+  ::placeholder {
+    color: var(--muted-foreground);
+    opacity: 1;
   }
 }

@@ -13,11 +13,22 @@ import {
   Music,
   Play,
   Pause,
-  Link,
+  MoreVertical,
 } from "lucide-react"
-import { useState } from "react"
-import type React from "react"
+import React, { useState, useEffect } from "react"
+import { Link } from "react-router"
+import { FileUpload } from "./file-upload"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { ChevronDown } from "lucide-react"
+// import { AudioCard } from "./audio-card"
 
+// Navigation item component remains largely the same.
 interface NavItemProps {
   href: string
   icon: React.ReactNode
@@ -28,8 +39,11 @@ interface NavItemProps {
 function NavItem({ href, icon, children, active }: NavItemProps) {
   return (
     <Link
-      href={href}
-      className={cn("flex items-center gap-2 px-3 py-2 text-sm text-gray-700 rounded-lg", active && "bg-gray-100")}
+      to={href}
+      className={cn(
+        "flex items-center gap-2 px-3 py-2 text-sm text-gray-700 rounded-lg",
+        active && "bg-gray-100"
+      )}
     >
       {icon}
       <span>{children}</span>
@@ -39,7 +53,7 @@ function NavItem({ href, icon, children, active }: NavItemProps) {
 
 function FolderItem({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+    <Link to={href} className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
       <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           strokeLinecap="round"
@@ -53,6 +67,7 @@ function FolderItem({ href, children }: { href: string; children: React.ReactNod
   )
 }
 
+// Updated AudioCard component with file type border and more actions.
 function AudioCard({ title, metadata, waveform }: { title: string; metadata: string; waveform: string }) {
   const [isPlaying, setIsPlaying] = useState(false)
 
@@ -61,13 +76,23 @@ function AudioCard({ title, metadata, waveform }: { title: string; metadata: str
     // TODO: Implement actual audio playback
   }
 
+  // Determine file type based on title extension
+  const isMidi =
+    title.toLowerCase().endsWith(".mid") || title.toLowerCase().endsWith(".midi")
+  const borderColorClass = isMidi ? "border-l-4 border-yellow-500" : "border-l-4 border-blue-500"
+
   return (
-    <div className="group relative overflow-hidden rounded-lg border bg-white p-4">
+    <div className={cn("group relative overflow-hidden rounded-lg border bg-white p-4", borderColorClass)}>
       <div className="flex justify-between items-center mb-2">
         <h3 className="font-medium text-gray-900">{title}</h3>
-        <Button variant="ghost" size="icon" onClick={togglePlayback}>
-          {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="ghost" size="icon" onClick={togglePlayback}>
+            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          </Button>
+          <Button variant="ghost" size="icon">
+            <MoreVertical className="h-4 w-4 text-gray-600" />
+          </Button>
+        </div>
       </div>
       <div className="aspect-[4/1] overflow-hidden mb-2">
         <img
@@ -83,43 +108,72 @@ function AudioCard({ title, metadata, waveform }: { title: string; metadata: str
   )
 }
 
-export default function AudioManager() {
+export default function FileManager() {
+  // State for the task ID returned from the backend and for polling
+  const [taskId, setTaskId] = useState<string | null>(null)
+  const [pollStatus, setPollStatus] = useState<string>("")
+  const [result, setResult] = useState<string | null>(null)
+
+  // Start polling when a task ID is set
+  useEffect(() => {
+    if (!taskId) return
+    setPollStatus("Processing file...")
+    const intervalId = setInterval(async () => {
+      try {
+        const response = await fetch(`http://localhost:8000/dsp/result/${taskId}/`)
+        const data = await response.json()
+        if (data.status === "completed") {
+          clearInterval(intervalId)
+          setPollStatus("Processing completed!")
+          setResult(data.result)
+        } else if (data.status === "failed") {
+          clearInterval(intervalId)
+          setPollStatus(`Processing failed: ${data.error}`)
+        }
+      } catch (error) {
+        console.error("Error checking processing status:", error)
+        clearInterval(intervalId)
+        setPollStatus("Error checking processing status.")
+      }
+    }, 5000)
+    return () => clearInterval(intervalId)
+  }, [taskId])
+
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex h-screen">
       {/* Sidebar */}
-      <div className="w-64 border-r bg-white">
-        <div className="p-4">
-          <h1 className="text-xl font-bold">AudioLab</h1>
-        </div>
+      <div className="w-64 border-r mt-4 dark:bg-gray-900">
         <nav className="space-y-1 px-2">
-          <NavItem href="#" icon={<LayoutGrid className="h-4 w-4" />} active>
+          <NavItem href="/" icon={<LayoutGrid className="h-4 w-4" />} active>
             All Files
           </NavItem>
-          <NavItem href="#" icon={<Waveform className="h-4 w-4" />}>
+          <NavItem href="/audio" icon={<Waveform className="h-4 w-4" />}>
             Audio Files
           </NavItem>
-          <NavItem href="#" icon={<Music className="h-4 w-4" />}>
+          <NavItem href="/midi" icon={<Music className="h-4 w-4" />}>
             MIDI Files
           </NavItem>
-          <div className="py-3">
-            <div className="px-3 text-xs font-medium uppercase text-gray-500">Projects</div>
-            <div className="mt-2">
+          <details open className="px-2">
+            <summary className="px-3 text-xs font-medium uppercase text-gray-500 cursor-pointer">
+              Projects
+            </summary>
+            <div className="mt-2 space-y-1 pl-3">
               <FolderItem href="#">Song Demos</FolderItem>
               <FolderItem href="#">Podcast Episodes</FolderItem>
               <FolderItem href="#">Sound Effects</FolderItem>
               <FolderItem href="#">Instrument Samples</FolderItem>
             </div>
-          </div>
+          </details>
         </nav>
       </div>
 
       {/* Main content */}
-      <div className="flex-1">
+      <div className="flex-1 overflow-y-auto">
         <header className="flex items-center justify-between border-b px-6 py-4">
           <div className="w-96">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-              <Input type="search" placeholder="Search audio files..." className="pl-9" />
+              <Input type="search" placeholder="Search files..." className="pl-9" />
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -142,35 +196,115 @@ export default function AudioManager() {
         </header>
 
         <div className="p-6">
-          <div className="mb-6 flex items-center gap-4">
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Project
-            </Button>
-            <Button variant="outline" className="gap-2">
-              <Upload className="h-4 w-4" />
-              Upload Audio
-            </Button>
-            <Button variant="outline" className="gap-2">
-              <Music className="h-4 w-4" />
-              Upload MIDI
-            </Button>
-            <Button variant="outline" className="gap-2">
-              <Waveform className="h-4 w-4" />
-              Analyze Audio
-            </Button>
+          {/* Upload drop zone */}
+          <div className="mb-8">
+            <FileUpload onUploadComplete={setTaskId} />
           </div>
 
-          <div className="mb-6">
-            <Tabs defaultValue="recent">
-              <TabsList>
-                <TabsTrigger value="recent">Recent</TabsTrigger>
-                <TabsTrigger value="favorites">Favorites</TabsTrigger>
-                <TabsTrigger value="shared">Shared</TabsTrigger>
-              </TabsList>
-            </Tabs>
+          {/* Display processing status and result */}
+          {pollStatus && (
+            <div className="mb-4 p-4 rounded-lg bg-blue-100 text-blue-700">
+              {pollStatus}
+            </div>
+          )}
+          {result && (
+            <pre className="bg-gray-50 p-4 rounded-lg overflow-auto max-h-96">
+              {JSON.stringify(result, null, 2)}
+            </pre>
+          )}
+
+          {/* Primary Action Group */}
+          <div className="space-y-6">
+            <div className="flex items-center space-x-2">
+              <Button size="lg" className="gap-2 bg-primary text-primary-foreground">
+                <Plus className="h-5 w-5" />
+                New Project
+              </Button>
+              
+              <div className="flex items-center border-l ml-2 pl-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="lg" className="gap-2">
+                      <Upload className="h-5 w-5" />
+                      Upload
+                      <ChevronDown className="h-4 w-4 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Audio
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Music className="h-4 w-4 mr-2" />
+                      Upload MIDI
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <Waveform className="h-4 w-4 mr-2" />
+                      Analyze Audio
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+
+            {/* View Controls */}
+            <div className="flex items-center justify-between">
+              <Tabs defaultValue="recent" className="w-auto">
+                <TabsList className="bg-muted/50 p-1">
+                  <TabsTrigger 
+                    value="recent" 
+                    className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  >
+                    Recent
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="favorites"
+                    className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  >
+                    Favorites
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="shared"
+                    className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  >
+                    Shared
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              <div className="flex items-center gap-2">
+                {/* Filter Pills */}
+                <div className="flex gap-1 p-1 bg-muted/50 rounded-full">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="rounded-full px-3 py-1 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                    data-state="active"
+                  >
+                    All
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="rounded-full px-3 py-1 text-xs font-medium"
+                  >
+                    Audio
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="rounded-full px-3 py-1 text-xs font-medium"
+                  >
+                    MIDI
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
 
+          {/* File grid */}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             <AudioCard title="Acoustic Guitar.wav" metadata="Audio • 3:42 • 44.1kHz" waveform="/placeholder.svg" />
             <AudioCard title="Drum Loop.mid" metadata="MIDI • 4 tracks • 120 BPM" waveform="/placeholder.svg" />
@@ -181,4 +315,3 @@ export default function AudioManager() {
     </div>
   )
 }
-

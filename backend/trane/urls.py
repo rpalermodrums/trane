@@ -16,11 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from trane.realtime_dsp import views as dsp_views
+from trane.realtime_dsp.views import UploadFileAPIView, GetResultAPIView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('dsp/', dsp_views.upload_page, name='dsp_upload'),
-    path('dsp/upload/', dsp_views.upload_file, name='dsp_upload_file'),
-    path('dsp/result/<str:task_id>/', dsp_views.get_result, name='dsp_get_result'),
+    path('dsp/upload/', UploadFileAPIView.as_view(), name='dsp-upload'),
+    path('dsp/result/<str:task_id>/', GetResultAPIView.as_view(), name='dsp-get-result'),
 ]
