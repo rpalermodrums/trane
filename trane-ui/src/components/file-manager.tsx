@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import {
   Bell,
@@ -195,33 +194,16 @@ export default function FileManager() {
           </div>
         </header>
 
-        <div className="p-6">
-          {/* Upload drop zone */}
-          <div className="mb-8">
-            <FileUpload onUploadComplete={setTaskId} />
-          </div>
-
-          {/* Display processing status and result */}
-          {pollStatus && (
-            <div className="mb-4 p-4 rounded-lg bg-blue-100 text-blue-700">
-              {pollStatus}
-            </div>
-          )}
-          {result && (
-            <pre className="bg-gray-50 p-4 rounded-lg overflow-auto max-h-96">
-              {JSON.stringify(result, null, 2)}
-            </pre>
-          )}
-
+        <div className="p-6 flex flex-col">
           {/* Primary Action Group */}
           <div className="space-y-6">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center">
               <Button size="lg" className="gap-2 bg-primary text-primary-foreground">
                 <Plus className="h-5 w-5" />
                 New Project
               </Button>
               
-              <div className="flex items-center border-l ml-2 pl-2">
+              <div className="flex items-center ml-2 pl-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="lg" className="gap-2">
@@ -247,71 +229,34 @@ export default function FileManager() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
+              
             </div>
-
-            {/* View Controls */}
-            <div className="flex items-center justify-between">
-              <Tabs defaultValue="recent" className="w-auto">
-                <TabsList className="bg-muted/50 p-1">
-                  <TabsTrigger 
-                    value="recent" 
-                    className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                  >
-                    Recent
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="favorites"
-                    className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                  >
-                    Favorites
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="shared"
-                    className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                  >
-                    Shared
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-
-              <div className="flex items-center gap-2">
-                {/* Filter Pills */}
-                <div className="flex gap-1 p-1 bg-muted/50 rounded-full">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="rounded-full px-3 py-1 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                    data-state="active"
-                  >
-                    All
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="rounded-full px-3 py-1 text-xs font-medium"
-                  >
-                    Audio
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="rounded-full px-3 py-1 text-xs font-medium"
-                  >
-                    MIDI
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* File grid */}
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* File grid */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 m-6 py-6">
             <AudioCard title="Acoustic Guitar.wav" metadata="Audio • 3:42 • 44.1kHz" waveform="/placeholder.svg" />
             <AudioCard title="Drum Loop.mid" metadata="MIDI • 4 tracks • 120 BPM" waveform="/placeholder.svg" />
             <AudioCard title="Vocal Take 3.wav" metadata="Audio • 2:56 • 48kHz" waveform="/placeholder.svg" />
           </div>
+          {/* Upload drop zone */}
+          <div className="py-2">
+            <FileUpload onUploadComplete={setTaskId} />
+              </div>
+    
+              {/* Display processing status and result */}
+              {pollStatus && (
+                <div className="mb-4 p-4 rounded-lg bg-blue-100 text-blue-700">
+                  {pollStatus}
+                </div>
+              )}
+            {result && (
+              <pre className="bg-gray-50 p-4 rounded-lg overflow-auto max-h-96">
+                {JSON.stringify(result, null, 2)}
+              </pre>
+            )}
+            </div>
+          </div>
+
         </div>
       </div>
-    </div>
   )
 }
