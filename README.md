@@ -1,6 +1,6 @@
 # Trane
 
-**Trane** is a cutting-edge experimental test kitchen at the intersection of machine learning and music. It explores real‑time audio and MIDI analysis, feature extraction, and DSP (Digital Signal Processing) using modern web technologies, Python/Django on the backend, and a React/TypeScript frontend. The project leverages Docker and container orchestration to provide a full-stack, scalable environment.
+**Trane** is an experimental test kitchen at the intersection of machine learning and music. It explores real‑time audio and MIDI analysis, feature extraction, and DSP (Digital Signal Processing) using modern web technologies, Python/Django on the backend, and a React/TypeScript frontend. The project leverages Docker and container orchestration to provide a full-stack, scalable environment.
 
 ---
 
